@@ -1,0 +1,35 @@
+# Lean dependencies, toolchains, and generated code
+.lake/
+.tools/
+*.olean
+*.ilean
+*.trace
+
+# Local scratch space, export packages, and diagnostic logs
+/tmp/
+/dist/
+*.log
+
+# Editor and local agent state
+.vscode/
+.idea/
+.codex/
+.agents/
+.aws/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# LaTeX build products (the paper PDF is intentionally included)
+*.aux
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg

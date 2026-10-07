@@ -1,0 +1,41 @@
+name: Lean build and axiom audit
+
+on:
+  push:
+    paths:
+      - "formalization/**"
+      - ".github/workflows/lean.yml"
+  pull_request:
+    paths:
+      - "formalization/**"
+      - ".github/workflows/lean.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lean-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      LEAN_NUM_THREADS: "2"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build the Lean library
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: formalization
+          auto-config: "false"
+          build: "true"
+          use-mathlib-cache: "true"
+
+      - name: Audit all project theorems and key constructions
+        working-directory: formalization
+        run: lake env lean Audit.lean

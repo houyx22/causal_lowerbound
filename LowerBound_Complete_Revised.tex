@@ -1,0 +1,4050 @@
+% Revised from the user-supplied LowerBound_Complete (1).tex.
+% Proof-detail revision: 26 September 2026.
+% Original equation numbers are retained. Lemma 15.10 is added.
+% Main changes: representative algebra and explicit target lifts;
+% Walsh-norm ghost leakage; local-sign removal across all incident blocks.
+% Build the complete PDF with the companion Proof_Flowcharts.pdf present.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{pdfpages}
+\usepackage{aliascnt}
+\usepackage{microtype}
+\setlength{\emergencystretch}{2em}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}
+\aliascntresetthe{lemma}
+\newaliascnt{proposition}{theorem}
+\newtheorem{proposition}[proposition]{Proposition}
+\aliascntresetthe{proposition}
+\newaliascnt{corollary}{theorem}
+\newtheorem{corollary}[corollary]{Corollary}
+\aliascntresetthe{corollary}
+\newaliascnt{remark}{theorem}
+\newtheorem{remark}[remark]{Remark}
+\aliascntresetthe{remark}
+\newaliascnt{definition}{theorem}
+\newtheorem{definition}[definition]{Definition}
+\aliascntresetthe{definition}
+\crefname{lemma}{Lemma}{Lemmas}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\crefname{theorem}{Theorem}{Theorems}
+\crefname{remark}{Remark}{Remarks}
+\crefname{definition}{Definition}{Definitions}
+
+\DeclareMathOperator{\Rad}{Rad}
+\DeclareMathOperator{\TV}{TV}
+\DeclareMathOperator{\ev}{ev}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\sym}{Sym}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\PP}{\mathbb{P}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Torus}{\mathbb{T}}
+\newcommand{\cW}{\mathcal{W}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cH}{\mathcal{H}}
+\newcommand{\cK}{\mathcal{K}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cP}{\mathcal{P}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cJ}{\mathcal{J}}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\od}{\mathbin{\odot}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\ja}{\mathsf{j}_a}
+\newcommand{\jb}{\mathsf{j}_b}
+\newcommand{\jsh}{\mathsf{j}_\circ}
+\newcommand{\jfi}{\mathsf{j}_\bullet}
+\newcommand{\dg}{\mathfrak{d}}
+\newcommand{\K}{\mathsf{K}}
+\newcommand{\real}{\mathrm{real}}
+\newcommand{\cf}{\mathfrak{c}}
+\newcommand{\realize}{\mathfrak r}
+
+\title{Minimax lower bound for pointwise CATE estimation\\
+with binary outcomes and rough design:\\
+\large the complete low-smoothness theorem}
+\author{Zhenghan Li}
+\date{5 September 2026}
+
+\begin{document}
+% The three original proof flowcharts are retained as vector PDF pages.
+% The companion file is included in the complete source archive.
+\hypersetup{pageanchor=false}
+\IfFileExists{Proof_Flowcharts.pdf}{%
+  \includepdf[pages=-,fitpaper=true,pagecommand={}]{Proof_Flowcharts.pdf}%
+}{%
+  \IfFileExists{LowerBound_Complete (3).pdf}{%
+    \includepdf[pages=1-3,fitpaper=true,pagecommand={}]{LowerBound_Complete (3).pdf}%
+  }{%
+    \PackageWarningNoLine{LowerBound}{Proof_Flowcharts.pdf not found; compiling the complete mathematical text without the three front flowcharts}%
+  }%
+}
+\clearpage
+\setcounter{page}{1}
+\hypersetup{pageanchor=true}
+\maketitle
+
+\begin{abstract}
+We prove a pointwise minimax lower bound for conditional average
+treatment-effect estimation in a Bernoulli-outcome model whose covariate
+density is assumed only to be bounded above and below.  With
+\(A_0=\alpha+\beta\), \(s_1=\{(\alpha\wedge1)+(\beta\wedge1)\}/2\),
+\(D_1=d+4s_1+2ds_1/\gamma\) and \(\rho=(A_0+2s_1)/D_1\), in the regime
+\(d>A_0(2+d/\gamma)\) the minimax risk at an interior point is at least
+\(c_\varepsilon n^{-(\rho+\varepsilon)}\) for every \(\varepsilon>0\); when
+both nuisance exponents are at most one the bound holds with
+\(\varepsilon=0\), and it holds over the uniform-design submodel.  The
+proof is organised in three cases according to which nuisance functions
+are rough, with the shared tools collected in Part~I.
+\end{abstract}
+
+\tableofcontents
+
+\part{Model, theorem, and common tools}
+
+\section{Model and main result}\label{sec:model}
+
+We observe independent copies of \(Z=(X,A,Y)\), where
+\begin{equation}
+ X\in[0,1]^d,\qquad
+ A\mid X=x\sim\operatorname{Bernoulli}\{\pi(x)\},\qquad
+ Y\mid(X=x,A=a)\sim\operatorname{Bernoulli}\{\mu_0(x)+a\tau(x)\}.
+ \label{eq:model}
+\end{equation}
+Fix \(x_0\in(0,1)^d\).  For \(s>0\), \(\cH^s(L)\) denotes the usual
+isotropic Hölder ball of radius \(L\) on \([0,1]^d\), with the convention
+that its elements are restrictions of functions defined on a fixed
+neighbourhood of the cube.  Fix constants
+\[
+ 0<\underline f<1<\overline f<\infty,\qquad 0<\kappa<\tfrac14,
+\]
+and radii \(L_\pi,L_0,L_\tau\) such that the constants \(1/2\) are interior
+points of \(\cH^\alpha(L_\pi)\) and \(\cH^\beta(L_0)\) (e.g.\ \(L_\pi,L_0>1/2\)).
+The class \(\cP=\cP(\alpha,\beta,\gamma)\) consists of all laws
+\eqref{eq:model} with design density \(f\) and nuisance functions such that
+\begin{align*}
+ &\underline f\le f\le\overline f,\qquad \int f=1,\\
+ &\pi\in\cH^\alpha(L_\pi),\qquad \mu_0\in\cH^\beta(L_0),\qquad \tau\in\cH^\gamma(L_\tau),\\
+ &\kappa\le\pi\le1-\kappa,\qquad \kappa\le\mu_0\le1-\kappa,\qquad
+ \kappa\le\mu_0+\tau\le1-\kappa .
+\end{align*}
+No smoothness is imposed on the design density: \(\cP\) is the
+\emph{rough-design} class, in which the design is constrained only by the
+two-sided bound; the design density is one of the objects that the
+lower-bound constructions perturb, and the rate below is specific to
+this class.  The pointwise absolute-error minimax risk is
+\begin{equation}
+ R^*_n(x_0)=\inf_{\widehat\tau}\sup_{P\in\cP}\E_P\abs{\widehat\tau(x_0)-\tau_P(x_0)}.
+ \label{eq:risk}
+\end{equation}
+Write
+\begin{equation}
+ A_0=\alpha+\beta,\qquad
+ s_1=\frac{(\alpha\wedge1)+(\beta\wedge1)}2,\qquad
+ D_1=d+4s_1+\frac{2ds_1}\gamma,\qquad
+ \rho=\frac{A_0+2s_1}{D_1}.
+ \label{eq:rho}
+\end{equation}
+
+\begin{theorem}[Rough-design pointwise lower bound]\label{thm:main}
+Let \(\alpha,\beta,\gamma>0\) satisfy
+\[
+ d>A_0\Bigl(2+\frac d\gamma\Bigr).
+\]
+For every fixed \(\varepsilon>0\) there are \(c_\varepsilon>0\) and
+\(n_\varepsilon<\infty\) such that
+\begin{equation}
+ R^*_n(x_0)\ge c_\varepsilon n^{-(\rho+\varepsilon)},\qquad n\ge n_\varepsilon .
+ \label{eq:main-bound}
+\end{equation}
+If \(\alpha,\beta\le1\) the bound holds with \(\varepsilon=0\), and the two
+hypotheses realising it have exactly uniform design, so that
+\eqref{eq:main-bound} holds over the uniform-design submodel as well.
+\end{theorem}
+
+The proof splits according to which nuisance functions are rough
+(Hölder exponent at most one):
+\[
+ \text{(A)}\ \ \alpha,\beta\le1;\qquad
+ \text{(B)}\ \ \alpha,\beta>1;\qquad
+ \text{(C)}\ \ \alpha\le1<\beta\ \text{ or }\ \beta\le1<\alpha ,
+\]
+proved in Parts~A, B and~C respectively; every \((\alpha,\beta)\) falls in
+exactly one case.  The parts share the model, the coded Walsh
+likelihood, the two-point reduction, the component principle, the
+design tilt, the scales, the interpolation system and taper on the
+torus, the finite moment simplex, the configuration-space Wiener
+estimates, and the polarization identity, all collected in Part~I.
+They differ in the construction of the two hypotheses:
+\begin{itemize}[leftmargin=*]
+\item in case~(A) both nuisances are carried by one rough Rademacher
+field at the fine scale \(\ell\), the design is uniform, and the proof is
+a direct Walsh-parity computation on packet-overlap components;
+\item in case~(B) both nuisances are smooth, the outcome is a cubic
+function of the propensity (the cubic bridge), and the design
+carries a positive moment carrier whose virtual jitter is made of
+independent signs attached to the observation sites;
+\item in case~(C) one nuisance is rough and the other is carried by the
+blocks; the carrier must then be built conditionally on the rough field,
+which makes the design informative about it, and the two sides are
+matched after design weighting.
+\end{itemize}
+The formula \(s_1=\{(\alpha\wedge1)+(\beta\wedge1)\}/2\) is the same in all
+cases: \(s_1=(\alpha+\beta)/2\) in (A), \(s_1=1\) in (B), and
+\(s_1=(1+\alpha\wedge\beta)/2\) in (C).  The regime
+\(d>A_0(2+d/\gamma)\) is the low-smoothness regime of Kennedy,
+Balakrishnan, Robins and Wasserman \cite{KBRW}; in case~(A) it reads
+\(s_1<(d/4)/(1+d/(2\gamma))\) and the rate is
+\(n^{-1/(1+d/(2\gamma)+d/(4s_1))}\), their rate.  The exponent \(1\) is
+treated as rough in case~(C); there the strict inequality
+\(\alpha\vee\beta>1\) is used only through \eqref{C:eq:jsh-over-jfi}.
+
+\begin{remark}[Scope]
+The theorem is stated for an interior target point, absolute-error risk,
+and Hölder balls containing the fair-sign baseline \(1/2\) as an interior
+point.  The strict inequalities \(\underline f<1<\overline f\) place a
+neighbourhood of the uniform density inside the design class; the block
+carriers of Parts~B and~C are perturbations of the uniform density at
+the block scale, and Part~A uses the uniform design itself.
+\end{remark}
+
+\section{Common tools}\label{sec:tools}
+
+\subsection{Coded signs and the Walsh likelihood}
+Let \(R=2A-1\), \(T=2Y-1\), \(p=2\pi-1\), \(y=2\mu_0-1\).  Relative to
+independent fair signs, the parameter \((p,y,\tau)\) has likelihood
+\begin{equation}
+ L_{p,y,\tau}=1+Rp+T\{y+\tau(1+p)\}+RT\{py+\tau(1+p)\}.
+ \label{eq:walsh}
+\end{equation}
+Thus equality of the four Walsh coefficients is equality of all four
+binary cells.  For a function \(g\) of iid Rademacher signs
+\(\lambda=(\lambda_m)\), the Walsh norm \(\norm g_W\) is the \(\ell^1\) norm
+of its Walsh coefficients; it is an algebra norm,
+\(\norm g_\infty\le\norm g_W\), and \(\abs{\E_\lambda g}\le\norm g_W\).  The
+\emph{degree} of a Walsh monomial \(\lambda^S=\prod_{m\in S}\lambda_m\) is
+\(\abs S\); since \(\lambda_m^2=1\), \(\lambda^S\lambda^{S'}=\lambda^{S\triangle S'}\),
+so the degree of a product of monomials is congruent modulo two to the
+sum of the degrees.  A Walsh polynomial is \emph{even} (\emph{odd}) if all
+its monomials have even (odd) degree, i.e.\ if it is invariant (changes
+sign) under \(\lambda\mapsto-\lambda\); an odd Walsh polynomial has zero
+mean, and more generally \(\E_\lambda\lambda^S=\one\{S=\varnothing\}\).
+
+\subsection{Partition of unity, bump, and the rough field}
+\begin{lemma}[Smooth quadratic partition of unity]\label{lem:partition}
+There exists \(\phi\in C_c^\infty(\R^d)\) such that
+\begin{equation}
+ \sum_{m\in\mathbb Z^d}\phi(u-m)^2=1,\qquad u\in\R^d .
+ \label{eq:quadratic-pu}
+\end{equation}
+\end{lemma}
+\begin{proof}
+Choose a nonnegative \(\eta\in C_c^\infty(\R)\) which is positive on
+\((-1,1)\), so that \(\sum_{k\in\mathbb Z}\eta(u-k)^2>0\) for all \(u\); the
+denominator of \(\phi_1(u)=\eta(u)\{\sum_k\eta(u-k)^2\}^{-1/2}\) is smooth,
+strictly positive and periodic, so \(\phi_1\in C_c^\infty(\R)\) and
+\(\sum_k\phi_1(u-k)^2=1\).  Put \(\phi(u)=\prod_{j=1}^d\phi_1(u_j)\).
+\end{proof}
+Fix \(G\in C_c^\infty(\R^d)\) with \(0\le G\le1\), \(G(0)=1\), and put
+\(G_h(x)=G((x-x_0)/h)\); since \(x_0\) is interior, \(\supp G_h\subset[0,1]^d\)
+for small \(h\).  For a fine scale \(\ell\le h\) the \emph{rough packets}
+and the \emph{rough field} are
+\begin{equation}
+ \psi^\flat_m(x)=G_h(x)\phi\Bigl(\frac{x-x_0}\ell-m\Bigr),\qquad
+ \Lambda_\lambda(x)=\sum_{m\in\mathbb Z^d}\lambda_m\psi^\flat_m(x),\qquad
+ \lambda_m\stackrel{\rm iid}\sim\Rad(\tfrac12),
+ \label{eq:rough}
+\end{equation}
+where only the \(O((h/\ell)^d)\) packets that are not identically zero
+need be retained.  Then \(\sum_m\psi^\flat_m(x)^2=G_h(x)^2\); at most
+\(N_0\) packets meet a point; \(\abs{\Lambda_\lambda}\le N_0\); and with
+\(J(x)=\{m:\psi^\flat_m(x)\ne0\}\), \(J(x)\cap J(x')\ne\varnothing\) implies
+\(x,x'\in\supp G_h\) and \(\norm{x-x'}_\infty\le R_0\ell\), for fixed
+\(N_0,R_0\).  For fixed \(x\), \(\Lambda_\lambda(x)\) is a Walsh polynomial
+of degree one with \(\norm{\Lambda_\lambda(x)}_W\le N_0\); if
+\(J(x_1),\dots,J(x_q)\) are pairwise disjoint, \(\Lambda_\lambda(x_1),\dots,\Lambda_\lambda(x_q)\)
+are independent.  The moments \(M_j(x):=\E\Lambda_\lambda(x)^j\) are
+\begin{equation}
+ M_0=1,\qquad M_j=0\ (j\text{ odd}),\qquad M_2=G_h^2,\qquad
+ M_4=\mu_4:=3G_h^4-2\sum_m(\psi^\flat_m)^4=G_h^4\{3-2q_4\},
+ \label{eq:rough-moments}
+\end{equation}
+with \(q_4(x)=\sum_{m\in\mathbb Z^d}\phi((x-x_0)/\ell-m)^4\in(0,1]\): indeed
+\(\E\Lambda^4=\sum_m\psi_m^4+3\sum_{m\ne m'}\psi_m^2\psi_{m'}^2
+=3(\sum_m\psi_m^2)^2-2\sum_m\psi_m^4\), \(\sum_m\phi_m^4\le(\sum_m\phi_m^2)^2=1\),
+and odd moments vanish by symmetry.  The function \(q_4\) is smooth at
+scale \(\ell\), \(\ell\)-periodic, and does not depend on \(\lambda\); so
+\(\mu_4\in[G_h^4,3G_h^4]\).  The centred square
+\(V(x):=\Lambda_\lambda(x)^2-G_h(x)^2=\sum_{m\ne m'}\lambda_m\lambda_{m'}\psi^\flat_m(x)\psi^\flat_{m'}(x)\)
+is a Walsh polynomial all of whose monomials have degree two, with
+\(\norm{V(x)}_W\le N_0^2\).
+
+\begin{lemma}[Hölder scaling]\label{lem:holder-scaling}
+If \(g\in C_c^\infty(\R^d)\) and \(0<q\le1\), then for every fixed \(t>0\)
+\(\norm{g((\cdot-x_c)/q)}_{C^t}\le C_{g,t}q^{-t}\), and the same bound holds
+for finite products and for bounded-overlap sums of translates of such
+functions.  The estimate is valid for noninteger \(t\): derivatives up to
+\(\lfloor t\rfloor\) scale in the displayed way, and the remaining Hölder
+seminorm gains the fractional power of \(q^{-1}\).
+\end{lemma}
+In particular the rough field satisfies
+\(\norm{\Lambda_\lambda}_{C^t}\le C_t\ell^{-t}\) for every \(t>0\) (it is
+\(G_h\) times a bounded-overlap sum of translates of \(\phi(\cdot/\ell)\),
+and \(h\ge\ell\)).
+
+\subsection{Two-point reduction and the component principle}
+\begin{lemma}[Two-point reduction]\label{lem:two-point}
+Let \(\PP_n,\mathbb Q_n\) be the laws of \((X_i,A_i,Y_i)_{i\le n}\) obtained
+by drawing a law from a prior supported in \(\cP\) and then \(n\) iid
+triples from it, and suppose \(\tau_P(x_0)=\theta_1\) for every law in the
+support of the first prior and \(\tau_P(x_0)=\theta_0\) for every law in
+the support of the second, with \(\theta_1-\theta_0=\Delta_{\rm sep}>0\).
+Then for every estimator
+\[
+ \sup_{P\in\cP}\E_P\abs{\widehat\tau(x_0)-\tau_P(x_0)}
+ \ge\frac{\Delta_{\rm sep}}2\bigl(1-\TV(\PP_n,\mathbb Q_n)\bigr).
+\]
+\end{lemma}
+\begin{proof}
+The supremum dominates both mixture risks; with
+\(g=\abs{\widehat\tau(x_0)-\theta_1}\), \(g'=\abs{\widehat\tau(x_0)-\theta_0}\),
+\(g+g'\ge\Delta_{\rm sep}\), so
+\(\E_{\PP_n}g+\E_{\mathbb Q_n}g'\ge\int(g+g')\,d(\PP_n\wedge\mathbb Q_n)\ge\Delta_{\rm sep}(1-\TV)\).
+\end{proof}
+
+For probability vectors \(P',Q'\) on a finite set write
+\(H^2(P',Q')=\sum_w(\sqrt{P'(w)}-\sqrt{Q'(w)})^2\in[0,2]\).
+
+\begin{lemma}[Hellinger facts]\label{lem:hellinger}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item \(\TV(P',Q')\le H(P',Q')\).
+\item \(H^2(\bigotimes_CP'_C,\bigotimes_CQ'_C)\le\sum_CH^2(P'_C,Q'_C)\).
+\item If \(P'(w)\ge c>0\) for all \(w\), then
+\(H^2(P',Q')\le c^{-1}\sum_w\abs{P'(w)-Q'(w)}^2\).
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) \(2\TV=\sum\abs{\sqrt{P'}-\sqrt{Q'}}(\sqrt{P'}+\sqrt{Q'})
+\le H\{\sum(\sqrt{P'}+\sqrt{Q'})^2\}^{1/2}\le2H\).
+(b) \(1-H^2/2=\sum\sqrt{P'Q'}\) is multiplicative and
+\(\prod_C(1-h_C)\ge1-\sum_Ch_C\) for \(h_C\in[0,1]\).
+(c) \((\sqrt{P'}-\sqrt{Q'})^2=(P'-Q')^2/(\sqrt{P'}+\sqrt{Q'})^2\le(P'-Q')^2/P'\).
+\end{proof}
+
+\begin{lemma}[Component principle]\label{lem:components}
+Let \(\PP_n,\mathbb Q_n\) have the same \(X^n\)-marginal, and let
+\(\mathcal E_n\) be an event depending on \(X^n\) only.  Suppose that for
+every \(x^n\notin\mathcal E_n\) there is a partition of \(\{1,\dots,n\}\)
+into \emph{components} \(C\) such that the conditional laws of
+\(w^n=(R_i,T_i)_{i\le n}\) given \(X^n=x^n\) factor as
+\(\PP_n(w^n\mid x^n)=\prod_C P_C(w_C)\), \(\mathbb Q_n(w^n\mid x^n)=\prod_CQ_C(w_C)\).
+Then, with \(H^2_C=H^2(P_C,Q_C)\),
+\[
+ \TV(\PP_n,\mathbb Q_n)\le\PP(\mathcal E_n)+\Bigl\{\E\Bigl[\one_{\mathcal E_n^c}\sum_CH^2_C\Bigr]\Bigr\}^{1/2}.
+\]
+\end{lemma}
+\begin{proof}
+Since the \(X^n\)-marginals coincide,
+\(\TV(\PP_n,\mathbb Q_n)\le\E\,\TV(\PP_n(\cdot\mid X^n),\mathbb Q_n(\cdot\mid X^n))\).
+Bound the conditional total variation by one on \(\mathcal E_n\) and, on
+\(\mathcal E_n^c\), by \(\{\sum_CH^2_C\}^{1/2}\) (Lemma~\ref{lem:hellinger}(a),(b));
+then apply Jensen's inequality to the square root.
+\end{proof}
+
+\begin{lemma}[Design tilt]\label{lem:tilt}
+Let \(\nu_P,\nu_Q\) be laws of a triple \((H,\lambda,U)\) with the same
+\((H,\lambda)\)-marginal, and let \((H,\lambda)\mapsto\widetilde f_{H,\lambda}\)
+be a measurable family of nonnegative functions on \([0,1]^d\) with
+\(Z(H,\lambda)=\int\widetilde f_{H,\lambda}\in[z_0,z_1]\), \(0<z_0\le z_1<\infty\);
+put \(f_{H,\lambda}=\widetilde f_{H,\lambda}/Z(H,\lambda)\).  Define the tilted
+priors
+\begin{equation}
+ d\Pi_{S,n}=\frac{Z(H,\lambda)^n}{\mathcal Z_n}\,d\nu_S,\qquad
+ \mathcal Z_n=\int Z^n\,d\nu_P=\int Z^n\,d\nu_Q,\qquad S\in\{P,Q\},
+ \label{eq:z-tilt}
+\end{equation}
+and let \(\PP_n,\mathbb Q_n\) be the mixtures obtained by drawing
+\((H,\lambda,U)\sim\Pi_{S,n}\), then \(X_1,\dots,X_n\) iid with density
+\(f_{H,\lambda}\), then \(W_i=(R_i,T_i)\) from site likelihoods
+\(L^S_i(w_i)\) relative to fair signs, depending on \((x_i,H,\lambda,U)\).
+Then the \((H,\lambda)\)-marginals of \(\Pi_{P,n}\) and \(\Pi_{Q,n}\)
+coincide, hence so do the laws of \(f_{H,\lambda}\) and the
+\(X^n\)-marginals of \(\PP_n\) and \(\mathbb Q_n\); and the joint density of
+\((X^n,W^n)\) with respect to Lebesgue measure times counting measure is
+\begin{equation}
+ \overline p_S(x^n,w^n)=\frac{4^{-n}}{\mathcal Z_n}\int\prod_{i=1}^n\widetilde f_{H,\lambda}(x_i)\prod_{i=1}^nL^S_i(w_i)\,d\nu_S(H,\lambda,U):
+ \label{eq:z-cancel}
+\end{equation}
+the design normaliser \(Z^n\) cancels against the tilt and the untilted
+prior \(\nu_S\) reappears.
+\end{lemma}
+\begin{proof}
+\(Z\) is a function of \((H,\lambda)\) alone, so \(\mathcal Z_n\) is the same
+on both sides and the density \(Z^n/\mathcal Z_n\) of \(\Pi_{S,n}\) with
+respect to \(\nu_S\) tilts only the common \((H,\lambda)\)-marginal.  The
+joint density is
+\[
+ \int\prod_{i=1}^nf_{H,\lambda}(x_i)\prod_{i=1}^n4^{-1}L^S_i(w_i)\,d\Pi_{S,n},
+ \qquad
+ \prod_{i=1}^nf_{H,\lambda}(x_i)=Z(H,\lambda)^{-n}\prod_{i=1}^n\widetilde f_{H,\lambda}(x_i),
+\]
+and substituting \eqref{eq:z-tilt} gives \eqref{eq:z-cancel}.
+\end{proof}
+
+\section{Scales}\label{sec:scales}
+
+This section fixes the scales of Parts~B and~C.  (Part~A uses only
+\(\Delta\), \(h\) and \(\ell\), which it defines directly in
+\eqref{A:eq:amplitudes} with \(\varepsilon=0\); the quantities \(r\), \(t\),
+\(Q\) and the ledgers below are not used there.)  Fix \(\varepsilon>0\)
+small and put
+\begin{equation}
+ z=\rho+\varepsilon,\quad \Delta=n^{-z},\quad h=\Delta^{1/\gamma},\quad
+ r=n^{-\xi},\quad \xi=\frac1d+c\varepsilon,\quad 0<c<\frac{D_1}{dA_0},
+ \quad \Lambda=1+\log n .
+ \label{eq:scales}
+\end{equation}
+Define the fine ratio \(t\), the rough scale \(\ell\), and the taper scale
+by
+\begin{equation}
+ t^{2s_1}=\Delta r^{-A_0},\qquad \ell=tr,\qquad t_n=t\Lambda^B,
+ \label{eq:fine}
+\end{equation}
+with a fixed exponent \(B\) chosen in each Part (Lemma~\ref{B:lem:wiener-increment},
+Lemma~\ref{C:lem:wiener}).  Note that \(\ell^{2s_1}=\Delta r^{2s_1-A_0}\),
+which reduces to \(\ell^{2s_1}=\Delta\) when \(A_0=2s_1\); this is the
+relation between \(\ell\) and \(\Delta\) used in Part~A.  Let
+\begin{equation}
+ Q=Q_\varepsilon=\max\Bigl\{2,\,1+\Bigl\lfloor\frac{[1-zd/\gamma]_+}{cd\varepsilon}\Bigr\rfloor\Bigr\},
+ \label{eq:Q}
+\end{equation}
+the finite matching order of Parts~B and~C; it depends on \(\varepsilon\)
+but not on \(n\).  Constants denoted by \(C_Q\) may depend on the fixed
+quantities \(d,\alpha,\beta,\gamma,\varepsilon,c\), the Hölder radii, and
+the fixed smooth cutoffs and feature system, but never on \(n\) or on
+dyadic shell indices.
+
+\begin{lemma}[Ordering]\label{lem:order}
+In the regime of Theorem~\ref{thm:main}: \(\gamma>A_0\), \(\rho>A_0/d\),
+\(d\rho<A_0+2s_1\), \(\gamma(d+4s_1)>dA_0\), and \(\rho<1\).  Moreover, for
+all sufficiently small \(\varepsilon>0\): \(t\to0\), \(\ell<r<h\),
+\(nr^d=n^{-cd\varepsilon}\to0\), and \(t/t_n=\Lambda^{-B}\to0\).
+\end{lemma}
+
+\begin{proof}
+The regime reads \(\gamma d>A_0(2\gamma+d)\), so \(d(\gamma-A_0)>2\gamma
+A_0>0\) and \(\gamma>A_0\); also \(\gamma(d+4s_1)>\gamma d>dA_0\).
+\(\rho>A_0/d\) iff \(d(A_0+2s_1)>A_0D_1\) iff \(2ds_1>4s_1A_0+2ds_1A_0/\gamma\)
+iff \(d>A_0(2+d/\gamma)\).  \(d\rho<A_0+2s_1\) because \(D_1>d\), and
+\(\rho<1\) because \(A_0+2s_1<d+4s_1<D_1\) (the regime gives \(d>2A_0\)).
+From \eqref{eq:fine},
+\[
+ \log_nt=-\frac{z-\xi A_0}{2s_1}
+ =-\frac{(\rho-A_0/d)+\varepsilon(1-cA_0)}{2s_1}<0
+\]
+for small \(\varepsilon\), so \(t\to0\) and \(\ell<r\).  \(r<h\) iff
+\(\xi>z/\gamma\), which for small \(\varepsilon\) is \(\gamma>d\rho\), i.e.\
+\(\gamma D_1>d(A_0+2s_1)\), i.e.\ \(\gamma(d+4s_1)>dA_0\).
+\end{proof}
+
+\begin{lemma}[Rate ledgers]\label{lem:ledgers}
+\begin{align}
+ nh^dt^d\Delta^2&=n^{-\varepsilon(D_1-cdA_0)/(2s_1)}\to0,
+ \label{eq:singleton}\\
+ n^2h^d\ell^d\Delta^2&=n^{-\varepsilon\{D_1-cd(A_0-2s_1)\}/(2s_1)}\to0,
+ \label{eq:collision}\\
+ n^{Q+1}h^dr^{dQ}&=n^{1-zd/\gamma-cd\varepsilon Q}\to0.
+ \label{eq:high}
+\end{align}
+Fixed powers of \(\Lambda\) multiplying the left sides do not change the
+conclusions.
+\end{lemma}
+
+\begin{proof}
+By \eqref{eq:fine}, \(d\log_nt=-d(z-\xi A_0)/(2s_1)\), so
+\[
+ \log_n(nh^dt^d\Delta^2)=1-\frac{zd}\gamma-\frac{d(z-\xi A_0)}{2s_1}-2z
+ =1+\frac{A_0}{2s_1}+\frac{cd\varepsilon A_0}{2s_1}-\frac{zD_1}{2s_1}.
+\]
+Since \(\rho D_1=2s_1+A_0\), substituting \(z=\rho+\varepsilon\) gives
+\eqref{eq:singleton}, negative because \(c<D_1/(dA_0)\).  Multiply by
+\(nr^d=n^{-cd\varepsilon}\) and use \(t^dr^d=\ell^d\) for
+\eqref{eq:collision}.  For \eqref{eq:high}: if \(zd/\gamma\ge1\) the
+exponent is negative for \(Q\ge2\); otherwise
+\(Q>[1-zd/\gamma]/(cd\varepsilon)\) by the choice of \(Q\).
+\end{proof}
+Nothing in this section distinguishes cases~(B) and~(C): only \(A_0\), \(s_1\),
+\(\gamma\), \(d\) enter.
+
+\section{Interpolation, taper, moment simplex, and shells}\label{sec:torus}
+
+\subsection{An explicit finite interpolation system}
+
+Let
+\[
+ \iota(u)=(\cos 2\pi u_1,\sin 2\pi u_1,\ldots,
+           \cos 2\pi u_d,\sin 2\pi u_d)\in\R^{2d}.
+\]
+Write
+\[
+ d_{\circ}(u,v)=\norm{\iota(u)-\iota(v)}
+ =2\left\{\sum_{a=1}^d\sin^2\!\bigl(\pi(u_a-v_a)\bigr)\right\}^{1/2}.
+\]
+Choose \(r_0>0\) small and a smooth nondecreasing truncation
+\(\kappa_\delta:[0,\infty)\to[0,1]\) such that
+\(\kappa_\delta(r)=r\) for \(r\le r_0\),
+\(\kappa_\delta(r)\) is a fixed positive constant for \(r\ge2r_0\), and
+\(\kappa_\delta(r)>0\) for \(r>0\).  Put
+\(\delta(u,v)=\kappa_\delta\{d_{\circ}(u,v)\}\).  Thus \(\delta\) depends
+only on the torus difference, is smooth off the diagonal, is comparable to
+\(d_{\circ}\wedge1\), and is constant away from a fixed diagonal
+neighborhood.  For a tuple \(T=(u_1,\ldots,u_q)\) of distinct points, define
+\begin{equation}
+ P_i(T)=\prod_{j\ne i}\delta(u_i,u_j),
+ \qquad
+ P_{\min}(T)=\min_iP_i(T).
+ \label{eq:product-distance}
+\end{equation}
+Let \(v_Q(u)\) contain all coordinate monomials in \(\iota(u)\) of total
+degree at most \(Q-1\), including repetitions and the constant.  Its dimension depends only on
+\((d,Q)\).
+
+\begin{lemma}[Uniform Lagrange vectors]
+\label{lem:lagrange}
+For \(q\le Q\) and any distinct tuple \(T=(u_1,\ldots,u_q)\),
+there are vectors \(c_i(T)\) satisfying
+\begin{equation}
+ v_Q(u_j)^\top c_i(T)=\one\{i=j\},
+ \qquad
+ \norm{c_i(T)}\le\frac{C_Q}{P_i(T)}.
+ \label{eq:lagrange}
+\end{equation}
+The construction is equivariant under permutations of the tuple.
+\end{lemma}
+
+\begin{proof}
+For \(i\ne j\), put
+\[
+ L_{ij}(u;T)
+ =\frac{\ip{\iota(u)-\iota(u_j)}{\iota(u_i)-\iota(u_j)}}
+        {\norm{\iota(u_i)-\iota(u_j)}^2}.
+\]
+Then \(L_{ij}(u_j;T)=0\), \(L_{ij}(u_i;T)=1\), and it is a linear
+combination of the constant and the coordinates of \(\iota(u)\).  Set
+\[
+ L_i(u;T)=\prod_{j\ne i}L_{ij}(u;T).
+\]
+This lies in the span of \(v_Q\) and satisfies
+\(L_i(u_j;T)=\one\{i=j\}\).  Each factor has coefficient norm at most
+\(C/\delta(u_i,u_j)\); multiplication in the fixed finite-dimensional
+feature space therefore gives the second assertion.  The formula is
+permutation equivariant.
+\end{proof}
+
+
+Each coordinate of \(c_i(T)\), being a coefficient of \(\prod_{j\ne i}L_{ij}\),
+is a finite sum of products containing exactly one of the
+\emph{elementary multipliers}
+\begin{equation}
+ \frac{\{\iota(u_i)-\iota(u_j)\}_a}{\norm{\iota(u_i)-\iota(u_j)}^2},
+ \qquad
+ \frac{\ip{\iota(u_j)}{\iota(u_i)-\iota(u_j)}}{\norm{\iota(u_i)-\iota(u_j)}^2}
+ \label{eq:elementary-lagrange-multipliers}
+\end{equation}
+for every edge \(\{i,j\}\) incident to \(i\), each of inverse-distance
+order one.
+
+\subsection{Taper and close-tuple volume}
+
+With \(\Lambda=1+\log n\) and the fine ratio \(t\) of \eqref{eq:fine},
+the taper scale is
+\begin{equation}
+ t_n=t\Lambda^B,
+ \label{eq:taper-scale}
+\end{equation}
+where the fixed exponent \(B>0\) is chosen in each Part.
+For large \(n\), \(t_n<1/4\).  Let
+\(\vartheta\in C^\infty([0,\infty);[0,1])\) be zero on \([0,1]\) and one
+on \([2,\infty)\), and define the symmetric taper
+\begin{equation}
+ \chi_Q(T)=\prod_{i=1}^Q
+ \vartheta\left(\frac{P_i(T)}{t_n}\right).
+ \label{eq:taper}
+\end{equation}
+The product is extended by zero on the diagonals.  Thus \(\chi_Q=0\) if
+\(P_{\min}\le t_n\), and \(\chi_Q=1\) if every \(P_i\ge2t_n\).
+
+\begin{lemma}[Close-tuple volume]
+\label{lem:bad-volume}
+For each fixed \(2\le q\le Q\) and \(0<\varrho<1/4\), the normalized
+\(dq\)-dimensional volume of
+\[
+ \cB_q(\varrho)=\{T\in(\Torus^d)^q:P_{\min}(T)\le C\varrho\}
+\]
+satisfies
+\begin{equation}
+ \abs{\cB_q(\varrho)}
+ \le C_Q\varrho^d\{1+\log(1/\varrho)\}^{q-2}.
+ \label{eq:bad-volume}
+\end{equation}
+Consequently, the set on which \(\chi_Q\ne1\) has volume at most
+\begin{equation}
+ C_Qt^d\Lambda^{M_Q},\qquad M_Q=Bd+Q-2 .
+ \label{eq:taper-volume}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Fix \(i\) and \(u_i\).  Up to a fixed multiplicative constant, integration
+in polar coordinates around \(u_i\) reduces the relevant part to
+\[
+ \int_{[0,1]^{q-1}}
+ \one\left\{\prod_{j=1}^{q-1}r_j\le C\varrho\right\}
+ \prod_{j=1}^{q-1}r_j^{d-1}\,dr_j.
+\]
+With \(w_j=r_j^d\), this is a constant times the volume of
+\(\{w\in[0,1]^{q-1}:\prod_jw_j\le C^d\varrho^d\}\), which equals
+\[
+ O_Q\left(\varrho^d\{1+\log(1/\varrho)\}^{q-2}\right)
+\]
+by one integration, or induction on \(q\).  Sum over \(i\).  Substituting
+\(\varrho=2t_n=2t\Lambda^B\) and using \(\log(1/t)=O(\log n)\) gives
+\eqref{eq:taper-volume}.
+\end{proof}
+
+\subsection{Wiener notation and an interior coefficient law}
+
+For \(m\ge1\), let \(\cW_m\) be the real Wiener algebra on \(\Torus^m\):
+\[
+ \norm{g}_{\cW_m}
+ =\sum_{\lambda\in\mathbb Z^m}\abs{\widehat g(\lambda)}.
+\]
+For finite-dimensional vector-valued functions, sum the coordinate norms.
+The Wiener algebra is a Banach algebra and
+\begin{equation}
+ \norm{gh}_{\cW_m}\le\norm g_{\cW_m}\norm h_{\cW_m},
+ \qquad
+ \norm g_\infty\le\norm g_{\cW_m}.
+ \label{eq:wiener-algebra}
+\end{equation}
+
+Let \(M\) be the dimension of \(v_Q\), and let
+\(\Psi_{4Q}(U)\in\R^{N_Q}\) contain every nonconstant monomial in
+\(U\in\R^M\) of total degree at most \(4Q\).
+
+\begin{lemma}[Interior finite moment simplex]
+\label{lem:moment-simplex}
+There is a finite law \(\Pi_0\), supported in an arbitrarily small open ball
+\(\mathbb B_0\subset\R^M\), and a number \(\delta_Q>0\) such that every
+vector \(v\in\R^{N_Q}\) with \(\norm v\le\delta_Q\) is realized as
+\begin{equation}
+ \E_{\Pi_v}\Psi_{4Q}(U)
+ =\E_{\Pi_0}\Psi_{4Q}(U)+v
+ \label{eq:moment-perturbation}
+\end{equation}
+by a probability law \(\Pi_v\) supported on the same finite set as
+\(\Pi_0\).
+\end{lemma}
+
+\begin{proof}
+The functions \(1\) and the coordinates of \(\Psi_{4Q}\) are linearly
+independent polynomials on every open ball.  Hence one can choose
+\(N_Q+1\) points \(u^0,\ldots,u^{N_Q}\in\mathbb B_0\) for which the vectors
+\((1,\Psi_{4Q}(u^j))\) are affinely independent; otherwise a nonzero
+polynomial of degree at most \(4Q\) would vanish on an open set.  Give all
+points strictly positive mass and call the resulting law \(\Pi_0\).  Its
+moment vector is an interior point of the resulting \(N_Q\)-dimensional
+simplex, so a fixed Euclidean ball around it is contained in that simplex.
+This gives \eqref{eq:moment-perturbation}.
+\end{proof}
+
+
+\subsection{Dyadic configuration shells}
+
+We fix a dyadic partition that is also used in Section~\ref{sec:wiener-config}.  Choose an
+integer \(m_0\) so large that \(2^{-m_0+3}<r_0\), every pair with
+\(\delta(u,v)\le 2^{-m_0+3}\) has a unique difference lift in
+\((-1/4,1/4)^d\), and all rescaled fine-shell lifts lie in a fixed
+compact set contained in \((-2^{m_0-2},2^{m_0-2})^d\).  Let \(\rho\in C_c^\infty((1/4,4))\) be nonnegative and
+satisfy
+\[
+ \sum_{m\in\mathbb Z}\rho(2^mr)=1,\qquad r>0.
+\]
+For \(m\ge m_0\), set \(\rho_m(r)=\rho(2^mr)\), and put
+\[
+ \rho_{\mathrm c}(r)=\sum_{m<m_0}\rho(2^mr).
+\]
+The latter is smooth on \([0,1]\), vanishes in a neighborhood of zero, and
+together with the \(\rho_m\)'s forms a nonnegative partition of unity on
+\((0,1]\).  Write
+\[
+ \mathbb M=\{\mathrm c\}\cup\{m:m\ge m_0\},
+ \qquad
+ \mu(\mathrm c)=0,\quad \mu(m)=m.
+\]
+There are fixed constants \(0<c_\rho<C_\rho<\infty\) such that
+\begin{equation}
+ c_\rho 2^{-\mu(m)}\le r\le C_\rho2^{-\mu(m)}
+ \quad\text{on }\supp\rho_m,
+ \qquad m\in\mathbb M.
+ \label{eq:dyadic-shell-comparability}
+\end{equation}
+For the edge set
+\[
+ \mathfrak E_Q=\{\{i,j\}:1\le i<j\le Q\},
+ \qquad E_Q:=\abs{\mathfrak E_Q}=\binom Q2,
+\]
+and a shell assignment \(\bm m=(m_e)_{e\in\mathfrak E_Q}\in
+\mathbb M^{\mathfrak E_Q}\), define
+\begin{equation}
+ \rho_{\bm m}(T)
+ =\prod_{e=\{i,j\}\in\mathfrak E_Q}
+   \rho_{m_e}\{\delta(u_i,u_j)\}.
+ \label{eq:configuration-shell-partition}
+\end{equation}
+Off the diagonals, \(\sum_{\bm m}\rho_{\bm m}=1\), with a locally finite
+sum.
+
+
+For a shell assignment \(\bm m\) and a vertex \(i\) write
+\begin{equation}
+ M_i(\bm m)=\sum_{e\in\mathfrak E_Q:\,e\ni i}\mu(m_e).
+ \label{eq:vertex-shell-sum}
+\end{equation}
+
+\begin{lemma}[Admissible shells]\label{lem:admissible-shells}
+If \(\chi_Q\rho_{\bm m}\not\equiv0\), then \(M_i(\bm m)\le\log_2(1/t_n)+C_Q\)
+and \(2^{M_i(\bm m)}\le C_Qt_n^{-1}\) for every \(1\le i\le Q\); and the number
+of shell assignments with \(\chi_Q\rho_{\bm m}\not\equiv0\) is at most
+\(C_Q\{1+\log(1/t_n)\}^{E_Q}\).
+\end{lemma}
+\begin{proof}
+If \(\chi_Q\rho_{\bm m}\) is not identically zero, there is a point of its
+support at which every \(P_i>t_n\).  By
+\eqref{eq:dyadic-shell-comparability}, throughout that shell
+\(P_i(T)\le C_Q2^{-M_i(\bm m)}\), whence the first claim.  In particular
+every fine edge index is at most \(\log_2(1/t_n)+C_Q\); since there are
+\(E_Q\) edges, the finitely many coarse choices and the bounded overlap
+of the dyadic partition give the count.
+\end{proof}
+
+\subsection{The polarization identity}
+For elements \(f_1,\dots,f_Q\) of a commutative algebra with unit, write
+\(f_1\od\cdots\od f_Q=(Q!)^{-1}\sum_{\sigma}f_{\sigma(1)}\otimes\cdots\otimes f_{\sigma(Q)}\)
+for the symmetrised tensor product.
+
+\begin{lemma}[Real polarization]\label{lem:polarization-identity}
+Let \(g_1,\dots,g_j\) (\(1\le j\le Q\)) be elements of a commutative Banach
+algebra with unit and put \(g_\epsilon=j^{-1}\sum_{i=1}^j\epsilon_ig_i\),
+\(\epsilon\in\{\pm1\}^j\).  Fix distinct nodes \(t_0,\dots,t_Q\in[-1,1]\) and
+let \(\lambda_{jr}\) solve the Vandermonde system
+\begin{equation}
+ \sum_{r=0}^Q\lambda_{jr}t_r^k=\frac{\one\{k=j\}}{\binom Qj},\qquad 0\le k\le Q .
+ \label{eq:vandermonde}
+\end{equation}
+Then for every \(\theta\ne0\),
+\begin{equation}
+ g_1\od\cdots\od g_j\od1^{\od(Q-j)}
+ =\frac{j^j}{2^jj!\,\theta^j}\sum_{\epsilon\in\{\pm1\}^j}\Bigl(\prod_{i=1}^j\epsilon_i\Bigr)
+ \sum_{r=0}^{Q}\lambda_{jr}(1+\theta t_rg_\epsilon)^{\otimes Q}.
+ \label{eq:polarization-identity}
+\end{equation}
+The identity is algebraic: it only uses commutativity, and the tensor
+powers on the right are products over distinct slots.
+\end{lemma}
+\begin{proof}
+The real polarization identity gives
+\begin{equation}
+ g_1\od\cdots\od g_j
+ =\frac1{2^jj!}\sum_{\epsilon\in\{\pm1\}^j}\Bigl(\prod_i\epsilon_i\Bigr)
+ \Bigl(\sum_i\epsilon_ig_i\Bigr)^{\otimes j}
+ =\frac{j^j}{2^jj!}\sum_\epsilon\Bigl(\prod_i\epsilon_i\Bigr)g_\epsilon^{\otimes j},
+ \label{eq:real-polarization}
+\end{equation}
+since expanding \((\sum_i\epsilon_ig_i)^{\otimes j}\) and summing against
+\(\prod_i\epsilon_i\) retains exactly the terms in which every \(g_i\)
+occurs once.  Expanding \((1+\theta t_rg)^{\otimes Q}=\sum_{k=0}^Q(\theta t_r)^k\binom Qk\,g^{\otimes k}\od1^{\od(Q-k)}\)
+and using \eqref{eq:vandermonde},
+\begin{equation}
+ g^{\otimes j}\od1^{\od(Q-j)}=\theta^{-j}\sum_{r=0}^Q\lambda_{jr}(1+\theta t_rg)^{\otimes Q}.
+ \label{eq:degree-extraction}
+\end{equation}
+Combine \eqref{eq:real-polarization} with \eqref{eq:degree-extraction}
+for \(g=g_\epsilon\).
+\end{proof}
+
+\section{Configuration-space Wiener estimates}\label{sec:wiener-config}
+
+The purpose of this section is to justify the shellwise estimate used in
+\cref{B:lem:wiener-increment} in the full \(dQ\)-variable Wiener algebra.  The
+argument treats all pair differences simultaneously; no independence of the
+edge variables is assumed.
+
+\begin{lemma}[Uniform dyadic pullback on a finite configuration graph]
+\label{lem:configuration-pullback}
+Let \(V=\{1,\ldots,Q\}\), let \(E\) be any fixed set of unordered pairs from
+\(V\), and fix an integer \(m_0\).  For every \(e=\{i,j\}\in E\), choose an
+integer \(m_e\ge m_0\) and put \(L_e=2^{m_e}\).  Let
+\(K\Subset(-2^{m_0-2},2^{m_0-2})^d\), and let
+\[
+ H_{\bm m}\in C^\infty\bigl((\Torus^d)^Q\times(\R^d)^E\bigr)
+\]
+be periodic in the first \(dQ\) variables and supported, in each Euclidean
+variable \(z_e\), inside \(K\).  Suppose that for an integer
+\[
+ R>\frac{dQ+d\abs E}{2}
+\]
+one has the uniform derivative bound
+\begin{equation}
+ \sup_{\bm m}
+ \sum_{\abs\alpha\le2R}
+ \norm{\partial^\alpha H_{\bm m}}_{L^\infty}
+ \le C_H.
+ \label{eq:profile-derivative-bound}
+\end{equation}
+Periodize \(H_{\bm m}\) in the variable \(z_e\) with period \(L_e\), and
+define on \((\Torus^d)^Q\)
+\begin{equation}
+ (\mathfrak P_{\bm m}H_{\bm m})(u_1,\ldots,u_Q)
+ =H_{\bm m}^{\mathrm{per}}
+ \left(u_1,\ldots,u_Q,
+       \{2^{m_e}(u_i-u_j)\}_{e=\{i,j\}\in E}
+ \right).
+ \label{eq:dyadic-pullback}
+\end{equation}
+The expression is independent of the chosen representatives of the torus
+points.  Moreover,
+\begin{equation}
+ \norm{\mathfrak P_{\bm m}H_{\bm m}}_{\cW_{dQ}}
+ \le C_{d,Q,E,R,K}\,C_H,
+ \label{eq:dyadic-pullback-bound}
+\end{equation}
+uniformly over all dyadic indices \(\bm m\).  The conclusion remains true
+for a finite sum of such profiles and for a family depending on auxiliary
+parameters ranging over a fixed compact set, provided
+\eqref{eq:profile-derivative-bound} is uniform in those parameters.
+\end{lemma}
+
+\begin{proof}
+Because \(K\Subset(-L_e/2,L_e/2)^d\) for every \(e\), periodization creates
+no overlap on the support of \(H_{\bm m}\).  Write the Fourier series of the
+periodized profile as
+\begin{equation}
+ H_{\bm m}^{\mathrm{per}}(u,z)
+ =\sum_{k\in\mathbb Z^{dQ}}
+   \sum_{\nu\in(\mathbb Z^d)^E}
+   b_{\bm m}(k,\nu)
+   e^{2\pi i k\cdot u}
+   \prod_{e\in E}e^{2\pi i\nu_e\cdot z_e/L_e}.
+ \label{eq:profile-fourier-series}
+\end{equation}
+Put \(p=dQ+d\abs E\) and
+\(V_{\bm m}=\prod_{e\in E}L_e^d\).  The Fourier coefficient is normalized by
+\(V_{\bm m}^{-1}\).  Apply \((1-\Delta_{u,z})^R\), integrate by parts, and
+use the fixed compact support in the \(z\)-variables.  The derivative bound
+\eqref{eq:profile-derivative-bound} gives
+\begin{equation}
+ \abs{b_{\bm m}(k,\nu)}
+ \le C_{R,K}C_H V_{\bm m}^{-1}
+ \left\{1+\abs k^2+
+  \sum_{e\in E}\frac{\abs{\nu_e}^2}{L_e^2}\right\}^{-R}.
+ \label{eq:anisotropic-fourier-coefficient}
+\end{equation}
+We now sum this estimate without losing a scale factor.  For fixed \(k\),
+the points \((\nu_e/L_e)_{e\in E}\) form an anisotropic rectangular grid in
+\(\R^{d\abs E}\) whose cell volume is \(V_{\bm m}^{-1}\).  If
+\(y\) lies in the grid cell adjacent to \((\nu_e/L_e)_e\), then, because
+all \(L_e\ge1\), the two quantities are uniformly comparable:
+\[
+ C_E^{-1}\left(1+\abs k^2+\abs y^2\right)
+ \le 1+\abs k^2+\sum_e\abs{\nu_e/L_e}^2
+ \le C_E\left(1+\abs k^2+\abs y^2\right).
+\]
+The left inequality is the direction needed below.  Comparison with the
+integral over the disjoint grid cells gives
+\begin{align}
+ &V_{\bm m}^{-1}
+ \sum_{\nu\in(\mathbb Z^d)^E}
+ \left\{1+\abs k^2+
+  \sum_e\frac{\abs{\nu_e}^2}{L_e^2}\right\}^{-R}
+ \nonumber\\
+ &\hspace{2cm}\le
+ C_E\int_{\R^{d\abs E}}
+       (1+\abs k^2+\abs y^2)^{-R}\,dy.
+ \label{eq:anisotropic-grid-sum}
+\end{align}
+The integral on the right is bounded by
+\(C(1+\abs k^2)^{-R+d\abs E/2}\).  Summing over
+\(k\in\mathbb Z^{dQ}\) is finite precisely under the stated condition
+\(R>(dQ+d\abs E)/2\).  Equations
+\eqref{eq:anisotropic-fourier-coefficient}--
+\eqref{eq:anisotropic-grid-sum} therefore imply
+\begin{equation}
+ \sum_{k,\nu}\abs{b_{\bm m}(k,\nu)}
+ \le C_{d,Q,E,R,K}C_H,
+ \label{eq:profile-l1-fourier}
+\end{equation}
+uniformly in all \(m_e\).
+
+Substituting \eqref{eq:dyadic-pullback} into one term of
+\eqref{eq:profile-fourier-series} produces
+\[
+ e^{2\pi i k\cdot u}
+ \prod_{e=\{i,j\}\in E}
+ e^{2\pi i\nu_e\cdot(u_i-u_j)},
+\]
+because \(2^{m_e}/L_e=1\).  This is one character of
+\((\Torus^d)^Q\).  Edges sharing a vertex merely add their integer
+frequencies in that vertex coordinate, and different dyadic scales have
+already disappeared from the character after the matched period choice
+\(L_e=2^{m_e}\).  Every pulled-back Fourier term thus has Wiener norm one.
+Distinct \((k,\nu)\) may produce the same character, but the triangle
+inequality and \eqref{eq:profile-l1-fourier} give
+\eqref{eq:dyadic-pullback-bound}.
+
+Finally, changing a representative \(u_i\) by an integer changes the
+argument \(2^{m_e}(u_i-u_j)\) by an integer multiple of the period
+\(L_e=2^{m_e}\).  Thus \eqref{eq:dyadic-pullback} is well defined.  Finite
+sums and compact auxiliary parameter families obey the same estimates.
+\end{proof}
+
+\begin{corollary}[Shell-localized Lagrange and product-taper multipliers]
+\label{cor:configuration-multipliers}
+Use the dyadic partition from
+\eqref{eq:configuration-shell-partition}.  Fix a shell assignment
+\(\bm m\in\mathbb M^{\mathfrak E_Q}\), and for each edge
+\(e=\{i,j\}\) let \(a_e\) be a nonnegative integer bounded by a fixed
+constant \(A\).  Let \(M_{\bm m}(T)\) be any one of the finitely many scalar
+products obtained from
+\begin{enumerate}
+\item the shell cutoffs \(\rho_{m_e}\{\delta(u_i,u_j)\}\);
+\item the product taper \(\chi_Q(T)\);
+\item \(a_e\) factors, at edge \(e\), chosen from the elementary
+      Lagrange coefficient multipliers in
+      \eqref{eq:elementary-lagrange-multipliers}; and
+\item a fixed number of functions from a fixed bounded subset of
+      \(C^\infty\) on the torus coordinates.
+\end{enumerate}
+Then
+\begin{equation}
+ \norm{M_{\bm m}}_{\cW_{dQ}}
+ \le C_{d,Q,A}\,
+      2^{\sum_{e\in\mathfrak E_Q}a_e\mu(m_e)}.
+ \label{eq:configuration-multiplier-bound}
+\end{equation}
+The constant is independent of \(n\), \(t_n\), and all shell indices.
+\end{corollary}
+
+\begin{proof}
+Call an edge fine when \(m_e\ne\mathrm c\).  On a coarse edge,
+\(\rho_{\mathrm c}(\delta_e)\) is supported a fixed positive distance from
+the diagonal.  Every multiplier in
+\eqref{eq:elementary-lagrange-multipliers} is therefore a fixed smooth
+function there, with a Wiener norm bounded independently of all scales.  We
+absorb every coarse-edge factor into the periodic \(u\)-dependence of a
+profile.
+
+Consider a fine edge \(e=\{i,j\}\), write \(m=m_e\), and use a local lift
+\(w=u_i-u_j\in(-1/4,1/4)^d\).  Put \(z=2^mw\).  By
+\eqref{eq:dyadic-shell-comparability} and the local comparability of
+\(\delta\) with the chordal distance, the shell cutoff restricts \(z\) to a
+fixed compact annulus
+\[
+ K_0\Subset\R^d\setminus\{0\},
+\]
+independently of \(m\).  The families
+\begin{align*}
+ q_m(u_j,z)
+ &=2^m\delta(u_j+2^{-m}z,u_j),\\
+ B_{m,a}(u_j,z)
+ &=2^{-m}
+   \frac{\{\iota(u_j+2^{-m}z)-\iota(u_j)\}_a}
+        {\norm{\iota(u_j+2^{-m}z)-\iota(u_j)}^2},\\
+ B_{m,0}(u_j,z)
+ &=2^{-m}
+   \frac{\ip{\iota(u_j)}
+   {\iota(u_j+2^{-m}z)-\iota(u_j)}}
+        {\norm{\iota(u_j+2^{-m}z)-\iota(u_j)}^2}
+\end{align*}
+are uniformly \(C^N\) on
+\(\Torus^d\times K_0\), for every fixed \(N\).  To verify this, multiply
+numerator and denominator by the appropriate powers of \(2^m\) and use the
+Taylor formula for the smooth embedding \(\iota\).  Its differential has
+full rank, so the rescaled denominator is bounded above and below on
+\(K_0\); differentiating the resulting quotient gives bounds independent of
+\(m\).  The same argument applies to \(q_m\), and
+\(0<c_Q\le q_m\le C_Q\) on the shell.  Thus each order-one multiplier is
+\(2^m\) times a uniformly smooth function of \((u_j,z)\), while the shell
+cutoff itself is the uniformly smooth function \(\rho\{q_m(u_j,z)\}\).
+A product containing \(a_e\) order-one factors at edge \(e\) therefore
+contributes the explicit scale \(2^{a_em_e}\) and otherwise has a uniformly
+smooth rescaled profile.
+
+It remains to verify the product taper.  For a vertex \(i\), put
+\[
+ M_i(\bm m)=\sum_{e\ni i}\mu(m_e),
+ \qquad
+ \lambda_i=t_n^{-1}2^{-M_i(\bm m)}.
+\]
+On the fixed shell profile,
+\begin{equation}
+ \frac{P_i(T)}{t_n}
+ =\lambda_i
+  \prod_{e\ni i}q_{e,m_e}(u,z_e),
+ \label{eq:rescaled-product-taper}
+\end{equation}
+where, for a coarse edge, \(q_{e,\mathrm c}\) denotes the corresponding
+fixed positive smooth distance factor.  The product on the right ranges in a
+fixed interval \([c_Q,C_Q]\).  If
+\(\lambda_iC_Q\le1\), the factor
+\(\vartheta(P_i/t_n)\) is identically zero on the shell.  If
+\(\lambda_ic_Q\ge2\), it is identically one.  In every remaining case,
+\(\lambda_i\) belongs to the fixed compact interval
+\([C_Q^{-1},2c_Q^{-1}]\).  Hence, by the chain rule applied to
+\eqref{eq:rescaled-product-taper}, the family of all nonconstant transition
+profiles has uniformly bounded derivatives of every fixed order.  Taking
+the product over the finitely many vertices preserves this uniform bound.
+This is the required control of the product taper; no derivative bound
+contains a dyadic index or \(t_n\).
+
+To make the pullback exact, choose once and for all a cutoff
+\(\kappa_0\in C_c^\infty(\R^d)\) that equals one on a neighborhood of
+\(K_0\).  For every fine edge, replace its rescaled factor by the same
+factor multiplied by \(\kappa_0(z_e)\); this does not alter the multiplier
+on the support of the shell cutoff.  Products of these extended factors,
+together with the coarse-edge factors and the taper profiles above, define
+functions \(H_{\bm m}(u,z)\) supported in one fixed compact set in each
+\(z_e\).  Their derivatives through any prescribed finite order are
+uniformly bounded.  After the explicit factor
+\(2^{\sum_ea_em_e}\) is extracted, one has the exact identity
+\[
+ M_{\bm m}(T)
+ =2^{\sum_ea_em_e}
+   (\mathfrak P_{\bm m}H_{\bm m})(T).
+\]
+The matched period \(L_e=2^{m_e}\) creates no extraneous copies: modulo
+\(L_e\), the point \(2^{m_e}(u_i-u_j)\) lies in the fixed support of
+\(\kappa_0\) exactly when the torus difference has the unique fine-shell
+lift used above.
+
+The profiles now satisfy the hypotheses of
+\cref{lem:configuration-pullback}.  Applying that lemma gives
+\eqref{eq:configuration-multiplier-bound}.  Its Fourier proof also explains
+why shared vertices do not create an additional loss: all pulled-back edge
+frequencies add to one configuration-space character, and the Wiener
+triangle inequality is taken only after that pullback.
+\end{proof}
+
+
+\part{Case A: two rough nuisances}
+
+\section{Case A: construction}\label{A:sec:construction}
+
+Throughout Part~A, \(\alpha,\beta\le1\), so \(s_1=(\alpha+\beta)/2=A_0/2\)
+and \(\rho=1/\{1+d/(2\gamma)+d/(4s_1)\}\).  Both nuisances are carried by
+the single rough field \(\Lambda_\lambda\) of \eqref{eq:rough}, at the fine
+scale \(\ell\); there is no block carrier, the design is exactly uniform,
+and no \(\varepsilon\)-loss is needed: the scales \(\Delta,h,\ell\) are
+defined directly in \eqref{A:eq:amplitudes}, and the quantities \(r,t,Q\)
+and the ledgers of Section~\ref{sec:scales} are not used.  The
+construction is that of the
+uniform-covariate note of Hou, written in the coded notation of
+Section~\ref{sec:tools}.
+
+\subsection{Scales and amplitudes}
+Put
+\begin{equation}
+ \begin{gathered}
+  \ja=c_a\ell^\alpha,\qquad \jb=c_b\ell^\beta,\qquad
+  \Delta:=\ell^{2s_1}=\ell^{A_0},\qquad h=\Delta^{1/\gamma},\\
+  d_*(x)=\ja\jb G_h(x)^2=c_ac_b\Delta G_h(x)^2,
+ \end{gathered}
+ \label{A:eq:amplitudes}
+\end{equation}
+with equal small constants \(c_a=c_b=c_0>0\) fixed in
+Lemma~\ref{A:lem:legal}; the
+scale \(\ell\) (equivalently \(\Delta\)) is tuned in
+Section~\ref{A:sec:tuning}.  Since \(\gamma>A_0=2s_1\) (Lemma~\ref{lem:order}),
+\(\ell=\Delta^{1/(2s_1)}\le\Delta^{1/\gamma}=h\) for small \(\Delta\).  Write
+\(\jsh=\ja\wedge\jb\), \(\jfi=\ja\vee\jb\); then \(\jsh\jfi=\ja\jb=c_ac_b\Delta\)
+and \(\ja,\jb\le1\).
+
+\subsection{The two hypotheses}
+In coded coordinates \((p,y,\tau)=(2\pi-1,2\mu_0-1,\tau)\), the rough
+signs \(\lambda\) being drawn from the Rademacher prior on both sides and
+the design being \(\operatorname{Unif}([0,1]^d)\) on both sides:
+\begin{equation}
+\begin{array}{c|ccc}
+ &p&y&\tau\\ \hline
+ Q&\ja\Lambda_\lambda&\jb\Lambda_\lambda&0\\
+ P\ \text{(I: }\alpha\ge\beta)&0&\jb\Lambda_\lambda-d_*&d_*\\
+ P\ \text{(II: }\beta\ge\alpha)&\ja\Lambda_\lambda&-d_*&d_*
+\end{array}
+\label{A:eq:two-sides}
+\end{equation}
+Under \(Q\) the two nuisances are proportional to the same rough field,
+and their product produces the \(RT\)-cell \(\ja\jb\Lambda_\lambda^2\) with mean
+\(\ja\jb G_h^2=d_*\); under \(P\) this cell is supplied by the treatment
+effect \(d_*\), the rougher of the two nuisances keeps its field, and the
+smoother one is shifted by \(-d_*\) to absorb the \(T\)-cell.
+
+\begin{lemma}[Legality and separation]\label{A:lem:legal}
+For sufficiently small fixed \(c_a,c_b>0\) and all sufficiently small
+\(\Delta\), every law in either row of \eqref{A:eq:two-sides} belongs to
+\(\cP\), and \(\tau_P(x_0)-\tau_Q(x_0)=c_ac_b\Delta\).
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{lem:holder-scaling}, \(\norm{\ja\Lambda_\lambda}_{C^\alpha}\le Cc_a\)
+and \(\norm{\jb\Lambda_\lambda}_{C^\beta}\le Cc_b\), while
+\(\abs{\ja\Lambda_\lambda}\le N_0c_a\), \(\abs{\jb\Lambda_\lambda}\le N_0c_b\).
+The treatment effect \(d_*=c_ac_b\Delta G_h^2\) has
+\(\norm{d_*}_{C^\gamma}\le Cc_ac_b\Delta h^{-\gamma}=Cc_ac_b\) and
+\(\norm{d_*}_{C^\beta}\le C\Delta h^{-\beta}=Ch^{\gamma-\beta}\to0\) since
+\(\gamma>A_0\ge\beta\).  Hence \(\pi=(1+p)/2\in\cH^\alpha(L_\pi)\),
+\(\mu_0=(1+y)/2\in\cH^\beta(L_0)\), \(\tau\in\cH^\gamma(L_\tau)\) after
+choosing \(c_a,c_b\) small, and \(\pi,\mu_0,\mu_0+\tau\in[\kappa,1-\kappa]\)
+because \(\abs p,\abs y,\abs\tau\le N_0(c_a+c_b)+o(1)\).  The uniform
+density lies in \([\underline f,\overline f]\).  Finally \(G_h(x_0)=1\).
+\end{proof}
+
+\subsection{Site likelihoods}
+Fix a site \(x\) and write \(\Lambda=\Lambda_\lambda(x)\), \(G=G_h(x)\),
+\(d=d_*(x)=\ja\jb G^2\), \(V=\Lambda^2-G^2\) (the centred square of
+Section~\ref{sec:tools}, a Walsh polynomial of degree two with
+\(\norm V_W\le N_0^2\)).  By \eqref{eq:walsh},
+\begin{align}
+ L^Q&=1+R\ja\Lambda+T\jb\Lambda+RT\ja\jb\Lambda^2
+ =\bigl[1+R\ja\Lambda+T\jb\Lambda+RTd\bigr]+RT\ja\jb V,
+ \label{A:eq:LQ}\\
+ L^P&=1+T\jb\Lambda+RTd\qquad\text{(I)},\qquad
+ L^P=1+R\ja\Lambda+Td\ja\Lambda+RTd\qquad\text{(II)},
+ \label{A:eq:LP}
+\end{align}
+(for (II): \(y+\tau(1+p)=-d+d(1+\ja\Lambda)=d\ja\Lambda\) and
+\(py+\tau(1+p)=-d\ja\Lambda+d(1+\ja\Lambda)=d\)).  The difference
+\(D:=L^Q-L^P\) is
+\begin{equation}
+ D=R\ja\Lambda+RT\ja\jb V\quad\text{(I)},\qquad
+ D=T\jb\Lambda-Td\ja\Lambda+RT\ja\jb V\quad\text{(II)}.
+ \label{A:eq:D}
+\end{equation}
+Thus \(D\) has no constant term; its \emph{linear part} (monomials of
+degree one) has Walsh norm \(\le CN_0\jsh\) in both subcases
+(in (I) \(\ja=\jsh\); in (II) \(\jb=\jsh\) and \(d\ja\le\ja\jb\le\jsh\)); its
+\emph{quadratic part} \(RT\ja\jb V\) has degree two and Walsh norm
+\(\le N_0^2\ja\jb\).  Every part of \(L^P\) is constant, or linear with Walsh
+norm \(\le CN_0\jfi\) (in (II) also \(d\ja\le\jfi\)).  In particular
+\begin{equation}
+ \E_\lambda L^Q=\E_\lambda L^P=1+RTd\qquad\text{in both subcases},
+ \label{A:eq:one-site}
+\end{equation}
+because \(\E\Lambda=0\) and \(\E V=0\): the one-observation mixtures
+coincide.
+
+\section{Case A: proof}\label{A:sec:proof}
+
+\subsection{Components}
+Condition on \(X^n=x^n\).  Declare \(i\sim j\) if \(J(x_i)\cap J(x_j)\ne\varnothing\)
+and let \(\{C\}\) be the components of the transitive closure; the sign
+sets \(M_C=\bigcup_{i\in C}J(x_i)\) of distinct components are disjoint,
+so the signs of distinct components are independent, and every link
+satisfies \(x_i,x_j\in\supp G_h\), \(\norm{x_i-x_j}_\infty\le R_0\ell\).  The
+\(X^n\)-marginals coincide (iid uniform), and relative to fair coins the
+conditional laws factor over components:
+\[
+ \PP_n(w^n\mid x^n)=\prod_C\bar p_C(w_C),\qquad
+ \mathbb Q_n(w^n\mid x^n)=\prod_C\bar q_C(w_C),
+\]
+\[
+ \bar p_C(w_C)=4^{-\abs C}\E_\lambda\prod_{i\in C}L^P_i,\qquad
+ \bar q_C(w_C)=4^{-\abs C}\E_\lambda\prod_{i\in C}L^Q_i .
+\]
+For a singleton \(C=\{i\}\), \eqref{A:eq:one-site} gives \(\bar p_C=\bar q_C\)
+and \(H^2_C=0\).
+
+\begin{lemma}[Component bound]\label{A:lem:component}
+For every component \(C\) with \(q=\abs C\) and every cell \(w_C\),
+\(\abs{\bar q_C(w_C)-\bar p_C(w_C)}\le4^{-q}C^q\,\ja\jb\), and
+\(H^2_C\le C^q(\ja\jb)^2=C^q\Delta^2\).
+\end{lemma}
+\begin{proof}
+Expand
+\[
+ \E_\lambda\prod_{i\in C}L^Q_i-\E_\lambda\prod_{i\in C}L^P_i
+ =\sum_{\varnothing\ne S\subseteq C}\E_\lambda\Bigl[\prod_{i\in S}D_i\prod_{j\in C\setminus S}L^P_j\Bigr],
+\]
+and expand every \(D_i\) into its linear or quadratic part and every
+\(L^P_j\) into its constant or linear part: at most \(C^q\) terms, each a
+product of Walsh polynomials whose absolute mean is at most the product
+of the Walsh norms of its factors.  A term with nonzero mean must have
+even total degree (Section~\ref{sec:tools}), the degree of a product
+being the sum of the degrees modulo two.  If the term contains a
+quadratic part, its coefficient product is \(\le C^q\ja\jb\) (all other
+coefficients are \(\le C\)).  Otherwise all its nonconstant parts are
+linear; it contains the linear part of some \(D_i\), \(i\in S\)
+(coefficient \(\le C\jsh\)), and by parity at least one further linear
+part (coefficient \(\le C\jfi\)); so the coefficient product is
+\(\le C^q\jsh\jfi=C^q\ja\jb\).  Summing over the terms gives the first
+claim.  For the second, \(L^P_i\ge1-\abs p-\abs{y+\tau(1+p)}-\abs{py+\tau(1+p)}\ge\frac12\)
+for small \(c_a,c_b\) (Lemma~\ref{A:lem:legal}), so \(\bar p_C\ge8^{-q}\), and
+Lemma~\ref{lem:hellinger}(c) gives
+\(H^2_C\le8^q\sum_{w_C}(4^{-q}C^q\ja\jb)^2\le C^q(\ja\jb)^2\).
+\end{proof}
+
+\begin{lemma}[Component counting]\label{A:lem:counting}
+For every \(C_0>0\) there is \(C\) such that
+\[
+ \E\sum_{C:\abs C=q}C_0^q\le C^qn^qh^d\ell^{d(q-1)},\qquad q\ge2.
+\]
+Consequently, if \(n\ell^d\le c_0\) with \(c_0\) sufficiently small,
+\(\E\sum_{C:\abs C\ge2}C_0^{\abs C}\le Cn^2h^d\ell^d\).
+\end{lemma}
+\begin{proof}
+It suffices to count connected labelled \(q\)-sets, which may overcount
+components.  Every such set contains a spanning tree; fix a labelled tree
+and a root.  Each edge forces both endpoints into \(\supp G_h\)
+(volume \(O(h^d)\)), and each child into a cube of volume \(O(\ell^d)\)
+around its parent; since the \(X_i\) are iid uniform, the tree is realised
+with probability \(\le Ch^d\ell^{d(q-1)}\).  By Cayley's formula there are
+\(q^{q-2}\) labelled trees, and
+\(\binom nq q^{q-2}\le\frac{n^q}{q!}q^{q-2}\le\frac{e^q}{q^2}n^q\le C^qn^q\)
+(using \(q!\ge(q/e)^q\)); this gives the first bound.  Summing over \(q\ge2\) gives
+\(Cn^2h^d\ell^d\sum_{q\ge2}(Cn\ell^d)^{q-2}\), a bounded geometric series
+when \(n\ell^d\le c_0\).
+\end{proof}
+
+\subsection{Tuning and conclusion}\label{A:sec:tuning}
+By Lemmas~\ref{lem:components} (with \(\mathcal E_n=\varnothing\)),
+\ref{A:lem:component} and~\ref{A:lem:counting},
+\begin{equation}
+ \TV(\PP_n,\mathbb Q_n)^2\le\E\sum_{C:\abs C\ge2}H^2_C\le Cn^2h^d\ell^d\Delta^2
+ =Cn^2\Delta^{d/\gamma+d/(2s_1)+2}=C\bigl(n\Delta^{1/\rho}\bigr)^2,
+ \label{A:eq:hellinger-total}
+\end{equation}
+provided \(n\ell^d\le c_0\); here \(h^d=\Delta^{d/\gamma}\), \(\ell^d=\Delta^{d/(2s_1)}\),
+and \(2+d/\gamma+d/(2s_1)=2/\rho\) because \(1/\rho=D_1/(A_0+2s_1)=1+d/(2\gamma)+d/(4s_1)\)
+when \(A_0=2s_1\).  Choose
+\begin{equation}
+ \Delta=c_{\star}n^{-\rho},
+ \label{A:eq:tuning}
+\end{equation}
+with a small fixed constant \(c_{\star}>0\).  Then
+\(n\ell^d=c_{\star}^{d/(2s_1)}n^{1-\rho d/(2s_1)}\to0\), because
+\(\rho>A_0/d=2s_1/d\) (Lemma~\ref{lem:order}); so \(n\ell^d\le c_0\) for large
+\(n\), and \eqref{A:eq:hellinger-total} gives
+\(\TV(\PP_n,\mathbb Q_n)\le C^{1/2}c_{\star}^{1/\rho}\le\frac12\) for \(c_{\star}\)
+small.  Every law in the support of the \(P\)-prior has
+\(\tau(x_0)=d_*(x_0)=c_ac_b\Delta\) and every law in the support of the
+\(Q\)-prior has \(\tau(x_0)=0\) (Lemma~\ref{A:lem:legal}), so
+Lemma~\ref{lem:two-point} gives
+\[
+ R^*_n(x_0)\ge\frac{c_ac_bc_{\star}}{4}\,n^{-\rho}
+\]
+for all large \(n\); smaller \(n\) are absorbed into the constant.  This
+proves Theorem~\ref{thm:main} in case~(A), with \(\varepsilon=0\), and the
+two priors are supported on laws with uniform design.  \qed
+
+\begin{remark}
+Case~(A) needs no design carrier: the shared rough field produces the
+one-site matching \eqref{A:eq:one-site} exactly, and \(n\ell^d\to0\) makes
+the packet-overlap components sparse.
+\end{remark}
+
+
+\part{Case B: two smooth nuisances}
+
+\section{Case B: packets and carrier boxes}\label{B:sec:packets}
+
+Throughout Part~B, \(\alpha,\beta>1\), so \(s_1=1\) and the scales of
+Section~\ref{sec:scales} read \(t^2=\Delta r^{-A_0}\), \(\ell=tr\),
+\(t_n=t\Lambda^B\); the fine ratio \(t\) is the relative size of the
+virtual jitter below.
+The rough field of Section~\ref{sec:tools} is not used in Part~B: both
+nuisances are smooth, and the role of the rough field is played by
+\emph{virtual} Rademacher signs attached to the observation sites.
+
+Let \(\phi\) be the quadratic partition of unity of
+Lemma~\ref{lem:partition}, \eqref{eq:quadratic-pu}, and let \(G_h\) be the
+bump of Section~\ref{sec:tools}.  Define
+\[
+ x_k=x_0+rk,\qquad
+ u_k(x)=\frac{x-x_k}{r},\qquad
+ \psi_k(x)=G_h(x)\phi(u_k(x)).
+\]
+Then
+\begin{equation}
+ \sum_k\psi_k(x)^2=G_h(x)^2.
+ \label{B:eq:quadratic-partition}
+\end{equation}
+(In Part~B the word \emph{packet} refers to these block bumps at scale
+\(r\), not to the rough packets of Section~\ref{sec:tools}.)  Only a fixed
+number of packets meet a point, and there are \(O(h^dr^{-d})\) active
+packets.  Enlarge the support of each active packet
+to a cube \(S_k\) of side \(C r\), with \(C\) fixed.  The cubes have bounded
+overlap and their union has volume \(O(h^d)\).  Each \(S_k\) is identified,
+by an affine map \(\theta_k\), with the normalized torus \(\Torus^d\).
+The packet support is contained in a fixed compact subcube of that torus.
+
+\section{Case B: the exact aggregate cubic bridge}
+
+\subsection{Fields and virtual jitter}
+
+Let
+\begin{equation}
+ a=c_ar^\alpha,\qquad
+ b=c_br^\beta,\qquad
+ d_*(x)=a\,b\,t^2G_h(x)^2.
+ \label{B:eq:amplitudes}
+\end{equation}
+For bounded coefficient vectors \(U_k\), define
+\begin{equation}
+ P(x)=\sum_k\psi_k(x)v_Q(\theta_k(x))^\top U_k,
+ \qquad p(x)=aP(x).
+ \label{B:eq:p-field}
+\end{equation}
+For a separated tuple of sites in a block, use \cref{lem:lagrange} and put
+\begin{equation}
+ \widetilde U_k
+ =U_k+t\sum_i c_{ki}(T)\zeta_{ki},
+ \qquad
+ \zeta_{ki}\stackrel{\mathrm{ind}}{\sim}\Rad(\tfrac12),
+ \label{B:eq:virtual-shift}
+\end{equation}
+where \(\Rad(1/2)\) denotes the symmetric \(\{\pm1\}\) law.  At an
+observed point,
+\begin{equation}
+ p_i'=p_i+\delta_i,
+ \qquad
+ \delta_i=a\,t\sum_k\psi_k(x_i)\zeta_{ki}.
+ \label{B:eq:delta}
+\end{equation}
+Conditional on the baseline field, the \(\delta_i\)'s are independent and
+symmetric.  By \eqref{B:eq:quadratic-partition},
+\begin{align}
+ v(x)&:=\E\delta(x)^2=a^2t^2G_h(x)^2,
+ \label{B:eq:variance}\\
+ m_4(x)&:=\E\delta(x)^4
+ =a^4t^4G_h(x)^4\{3-2q_4(x)\},
+ \label{B:eq:fourth-moment}\\
+ q_4(x)&=\sum_k\phi(u_k(x))^4.
+\end{align}
+
+\subsection{Cubic identity}
+
+Define
+\begin{equation}
+ K_x(z)
+ =\frac ba\left[\{1+\eta(x)\}z-\frac{z^3}{3}\right],
+ \qquad
+ \eta(x)=\frac{a^2t^2G_h(x)^2}{3}\{3-2q_4(x)\}.
+ \label{B:eq:cubic}
+\end{equation}
+This is also the definition when \(G_h=0\).  Put
+\begin{equation}
+ u_x(p)=\E_\delta K_x(p+\delta)=K_x(p)-d_*(x)p.
+ \label{B:eq:u}
+\end{equation}
+The two fuzzy sides use
+\begin{equation}
+\begin{array}{c|ccc}
+ &2\pi-1&2\mu_0-1&\tau\\ \hline
+ P&p&u_x(p)-d_*(1+p)&d_*\\
+ Q&p'&K_x(p')&0.
+\end{array}
+\label{B:eq:two-sides}
+\end{equation}
+
+\begin{lemma}[Cubic covariance identity]
+\label{B:lem:cubic}
+For every fixed baseline value \(p\),
+\begin{equation}
+ \operatorname{Cov}\{p+\delta,K_x(p+\delta)\}
+ =d_*(x)(1-p^2).
+ \label{B:eq:cubic-cov}
+\end{equation}
+Consequently,
+\begin{equation}
+ \E_\delta(1,p',K_x(p'),p'K_x(p'))
+ =(1,p,u_x(p),pu_x(p)+d_*(1-p^2)).
+ \label{B:eq:walsh-vector}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write \(K_x(z)=c_1z+c_3z^3\), where
+\[
+ c_3=-\frac b{3a}=-\frac{d_*}{3v},
+ \qquad
+ c_1=\frac ba(1+\eta)
+     =\frac{d_*}{v}+\frac{d_*m_4}{3v^2}
+\]
+when \(v>0\); the identities extend continuously to \(v=0\).  Symmetry
+of \(\delta\) gives
+\[
+ \operatorname{Cov}\{p+\delta,K_x(p+\delta)\}
+ =c_1v+c_3(3p^2v+m_4)
+ =d_*(1-p^2).
+\]
+It also gives
+\[
+ \E K_x(p+\delta)
+ =K_x(p)+3c_3pv=K_x(p)-d_*p.
+\]
+Substitution proves \eqref{B:eq:walsh-vector}.
+\end{proof}
+
+The right side of \eqref{B:eq:walsh-vector} is exactly the pair of outcome
+Walsh coefficients generated by the \(P\)-row of \eqref{B:eq:two-sides}.
+Conditional independence of the site jitters therefore gives equality of all
+\(4^q\) joint cells for every finite tuple when every active block is
+virtually shifted.  The identity uses the aggregate \(p\), so overlapping
+smooth packets cause no additional term.
+
+\section{Case B: a positive pre-data moment carrier}
+
+\subsection{The tapered ideal increment and its Wiener norm}
+
+For a \(Q\)-tuple \(T\), write
+\[
+ C_T(\zeta)=\sum_{i=1}^Qc_i(T)\zeta_i.
+\]
+On the support of \(\chi_Q\), \cref{lem:lagrange} gives
+\[
+ t\norm{C_T(\zeta)}\le C_Q\frac{t}{P_{\min}(T)}
+ \le C_Q\Lambda^{-B}.
+\]
+Choose the support ball in \cref{lem:moment-simplex} strictly inside a fixed
+legal coefficient ball.  For large \(n\), the displayed virtual shifts stay
+inside that legal ball wherever \(\chi_Q\ne0\).  Define the vector-valued
+symmetric tensor
+\begin{equation}
+ J_n(T)=\chi_Q(T)
+ \left[
+ \E_{\Pi_0,\zeta}\Psi_{4Q}\{U+tC_T(\zeta)\}
+ -\E_{\Pi_0}\Psi_{4Q}(U)
+ \right],
+ \label{B:eq:ideal-increment}
+\end{equation}
+with the product extended by zero across the diagonals.
+\begin{lemma}[Inverse-square Wiener estimate]
+\label{B:lem:wiener-increment}
+With \(E_Q=\binom Q2\),
+\begin{equation}
+ \norm{J_n}_{\cW_{dQ}}
+ \le C_Q\{1+\log(1/t_n)\}^{E_Q}
+       \sum_{j=2}^{4Q}\left(\frac{t}{t_n}\right)^j.
+ \label{B:eq:wiener-increment-strong}
+\end{equation}
+Consequently,
+\begin{equation}
+ \norm{J_n}_{\cW_{dQ}}
+ \le C_Q\Lambda^{E_Q-2B}=:\delta_n.
+ \label{B:eq:wiener-increment}
+\end{equation}
+In particular, any fixed choice
+\begin{equation}
+ B>\frac{E_Q+2}{2}
+ \label{B:eq:B-choice}
+\end{equation}
+makes \(\delta_n=o(1)\).  All constants in this lemma are independent of
+\(n\) and of the shell indices, with the fixed-dependence convention stated
+after \eqref{eq:Q}.
+\end{lemma}
+
+\begin{proof}
+Fix one coordinate monomial \(U^\nu\) of \(\Psi_{4Q}\), with
+\(1\le\abs\nu\le4Q\), and expand
+\((U+tC_T(\zeta))^\nu-U^\nu\) by the multinomial theorem.  After integrating
+\(U\sim\Pi_0\), every coefficient is bounded by a constant depending only
+on \(Q\) and the fixed support of \(\Pi_0\).  A term containing \(j\)
+shift factors is a finite linear combination of expressions
+\begin{equation}
+ t^j\prod_{r=1}^j c_{i_r,a_r}(T),
+ \label{B:eq:generic-shift-term}
+\end{equation}
+where \(c_{i,a}\) denotes a coordinate of \(c_i\).  The expectation over the
+independent symmetric signs is zero unless every site index occurs an even
+number of times among \(i_1,\ldots,i_j\).  Thus every surviving term has
+\(j\ge2\); this is what gives an inverse-square rather than an
+inverse-first-order gain.
+
+Insert the partition \eqref{eq:configuration-shell-partition} into a
+surviving term, and let \(M_i(\bm m)\) be as in \eqref{eq:vertex-shell-sum}.
+Since every coordinate of \(c_i(T)\) is a finite sum of products
+containing exactly one elementary multiplier
+\eqref{eq:elementary-lagrange-multipliers} for every edge incident to
+\(i\), in the product in \eqref{B:eq:generic-shift-term} edge \(e\) occurs
+with some inverse order \(a_e\), and
+\begin{equation}
+ \sum_{e\in\mathfrak E_Q}a_e\mu(m_e)
+ =\sum_{r=1}^jM_{i_r}(\bm m).
+ \label{B:eq:inverse-order-ledger}
+\end{equation}
+
+Apply \cref{cor:configuration-multipliers} to the product of the shell
+cutoffs, the product-distance taper, and the elementary multipliers.  It
+gives
+\begin{align}
+ &\norm{
+   \chi_Q\rho_{\bm m}
+   \prod_{r=1}^jc_{i_r,a_r}
+  }_{\cW_{dQ}}
+ \le C_Q2^{\sum_rM_{i_r}(\bm m)}.
+ \label{B:eq:shellwise-c-bound}
+\end{align}
+There is no additional scale loss from shared vertices, different edge
+scales, or the product taper; those points are exactly what
+\cref{cor:configuration-multipliers} proves.  On a shell with
+\(\chi_Q\rho_{\bm m}\not\equiv0\), \cref{lem:admissible-shells} yields
+\[
+ 2^{M_i(\bm m)}\le C_Qt_n^{-1},
+\]
+and hence
+\begin{equation}
+ \norm{
+   \chi_Q\rho_{\bm m}
+   t^j\prod_{r=1}^jc_{i_r,a_r}
+  }_{\cW_{dQ}}
+ \le C_Q\left(\frac{t}{t_n}\right)^j.
+ \label{B:eq:one-shell-shift-bound}
+\end{equation}
+
+There are only finitely many coordinates, monomials, and multinomial terms,
+with their number depending on \(Q\) but not on \(n\).  Sum
+\eqref{B:eq:one-shell-shift-bound} over them, over \(j=2,\ldots,4Q\), and over
+the \(\le C_Q\{1+\log(1/t_n)\}^{E_Q}\) shell assignments of
+\cref{lem:admissible-shells}.  This proves
+\eqref{B:eq:wiener-increment-strong}.  Finally,
+\(t_n=t\Lambda^B\), so
+\[
+ \sum_{j=2}^{4Q}(t/t_n)^j
+ =\sum_{j=2}^{4Q}\Lambda^{-Bj}
+ \le C_Q\Lambda^{-2B},
+\]
+and \(1+\log(1/t_n)\le C_\varepsilon\Lambda\) because \(t\) is a fixed
+negative power of \(n\).  This proves \eqref{B:eq:wiener-increment}.  Under
+\eqref{B:eq:B-choice}, \(E_Q-2B<-2\), and therefore \(\delta_n=o(1)\).
+\end{proof}
+
+\subsection{A fixed positive polarization operator}
+
+\begin{lemma}[Positive Wiener polarization]
+\label{B:lem:positive-polarization}
+Fix \(Q\) and \(0<\eta_f<1/2\).  There is a countable dictionary
+\(\{F_m:m\ge0\}\subset\cW_d\), fixed independently of the tensor to be
+decomposed, with
+\begin{equation}
+ \int_{\Torus^d}F_m=1,
+ \qquad
+ 1-\eta_f\le F_m\le1+\eta_f,
+ \qquad
+ \sup_m\norm{F_m}_{\cW_d}<\infty,
+ \label{B:eq:positive-atoms}
+\end{equation}
+and bounded linear maps
+\(A\mapsto a_m(A)\) from the symmetric real Wiener tensors on
+\((\Torus^d)^Q\) to any fixed finite-dimensional real vector space \(V\),
+such that
+\begin{align}
+ A&=\sum_{m\ge0}a_m(A)F_m^{\otimes Q},
+ \label{B:eq:polarization-expansion}\\
+ \sum_{m\ge0}\norm{a_m(A)}
+ &\le C_{Q,\eta_f}\norm A_{\cW_{dQ}},
+ \label{B:eq:polarization-bound}\\
+ \sum_{m\ge0}\norm{a_m(A)-a_m(A')}
+ &\le C_{Q,\eta_f}\norm{A-A'}_{\cW_{dQ}}.
+ \label{B:eq:polarization-lipschitz}
+\end{align}
+The series converges absolutely in Wiener norm.
+\end{lemma}
+
+\begin{proof}
+Use the real trigonometric basis consisting of \(1\), sines, and cosines,
+normalized so that every nonconstant basis element \(w\) has mean zero,
+\(\norm w_\infty\le1\), and \(\norm w_{\cW_d}=1\).  Passing from the
+complex Fourier basis to this real basis changes the \(\ell^1\) coefficient
+norm by only a fixed factor depending on \(Q\).
+
+It suffices to decompose a symmetrized basis tensor
+\[
+ w_1\od\cdots\od w_j\od1^{\od(Q-j)},
+ \qquad 0\le j\le Q,
+\]
+where each \(w_i\) is nonconstant.  For \(j\ge1\), apply
+\cref{lem:polarization-identity} in the Wiener algebra \(\cW_d\) with
+\(g_i=w_i\) and a fixed \(0<\theta\le\eta_f/2\): every symmetrized basis
+tensor is a fixed finite linear combination of \(F^{\otimes Q}\) with
+\(F=1+\theta t_rg_\epsilon\), \(g_\epsilon=j^{-1}\sum_i\epsilon_iw_i\).  Since
+\(\int g_\epsilon=0\), \(\norm{g_\epsilon}_\infty\le1\) and
+\(\norm{g_\epsilon}_{\cW_d}\le1\), such \(F\) has integral one, lies between
+\(1-\eta_f\) and \(1+\eta_f\), and has uniformly bounded Wiener norm.  The
+case \(j=0\) uses \(F=1\).
+
+Apply this fixed stencil coefficientwise to the absolutely summable real
+Fourier expansion of \(A\).  Index all resulting atoms by a single
+countable index \(m\).  The total absolute coefficient generated by one
+basis tensor is bounded by a constant depending only on
+\((Q,\eta_f)\).  Summing the Fourier coefficients proves
+\eqref{B:eq:polarization-bound}.  The construction is linear, so applying the
+same estimate to \(A-A'\) proves \eqref{B:eq:polarization-lipschitz}.  Absolute
+Wiener convergence gives \eqref{B:eq:polarization-expansion}.
+\end{proof}
+
+\subsection{The self-consistent positive carrier}
+
+\begin{proposition}[Positive pre-data carrier]
+\label{B:prop:carrier}
+For all sufficiently large \(n\), there are joint block laws
+\(\nu_{P,k}(dH_k,dU_k)\) and \(\nu_{Q,k}(dH_k,dU_k)\) with the following
+properties.
+
+\begin{enumerate}
+\item Their full \(H_k\)-marginals are identical.  The label \(H_k\)
+selects a factor \(F_{H_k}\) satisfying
+\begin{equation}
+ \int_{\Torus^d}F_{H_k}=1,
+ \qquad
+ 1-\eta_f\le F_{H_k}\le1+\eta_f.
+ \label{B:eq:local-density-factor}
+\end{equation}
+All coefficient draws lie in one fixed legal ball.
+
+\item If
+\begin{equation}
+ D_Q(T)=\E F_{H_k}(u_1)\cdots F_{H_k}(u_Q),
+ \label{B:eq:DQ}
+\end{equation}
+then the same density law that generates \(D_Q\) satisfies the exact moment
+identity
+\begin{align}
+ &\E_{\nu_{Q,k}}
+ \left[F_{H_k}^{\otimes Q}(T)\Psi_{4Q}(U_k)\right]
+ -\E_{\nu_{P,k}}
+ \left[F_{H_k}^{\otimes Q}(T)\Psi_{4Q}(U_k)\right]
+ \nonumber\\
+ &\hspace{2cm}=D_Q(T)J_n(T).
+ \label{B:eq:master-moment}
+\end{align}
+The laws are chosen before observing the data and are not tuple-indexed.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+For a symmetric scalar tensor \(D\), set
+\[
+ A(D)=D J_n.
+\]
+Apply \cref{B:lem:positive-polarization} coordinatewise with
+\(V=\R^{N_Q}\):
+\[
+ A(D)=\sum_m a_m(D)F_m^{\otimes Q}.
+\]
+Let \(C_{\mathrm{pol}}\) be a constant valid in both
+\eqref{B:eq:polarization-bound} and \eqref{B:eq:polarization-lipschitz}.  Choose
+\(K_0>2/\delta_Q\), where \(\delta_Q\) is from
+\cref{lem:moment-simplex}, and define
+\[
+ \omega_m(D)=K_0\norm{a_m(D)},
+ \qquad
+ \Phi(D)=
+ \left(1-\sum_m\omega_m(D)\right)1^{\otimes Q}
+ +\sum_m\omega_m(D)F_m^{\otimes Q}.
+\]
+Set
+\[
+ C_F=\sup_m
+ \norm{F_m^{\otimes Q}-1^{\otimes Q}}_{\cW_{dQ}}<\infty,
+ \qquad
+ C_0=K_0C_FC_{\mathrm{pol}},
+ \qquad
+ C_1=K_0C_{\mathrm{pol}}.
+\]
+For any symmetric \(D,D'\), the reverse triangle inequality,
+\eqref{B:eq:polarization-lipschitz}, and the Wiener algebra inequality give
+\begin{align}
+ \norm{\Phi(D)-\Phi(D')}_{\cW_{dQ}}
+ &\le K_0C_F\sum_m
+   \abs{\norm{a_m(D)}-\norm{a_m(D')}}\nonumber\\
+ &\le C_0\norm{(D-D')J_n}_{\cW_{dQ}}\nonumber\\
+ &\le C_0\delta_n\norm{D-D'}_{\cW_{dQ}}.
+ \label{B:eq:phi-contraction}
+\end{align}
+
+Define the closed ball in the symmetric Wiener tensors
+\begin{equation}
+ \mathbb B_n
+ =\left\{D=D^{\mathrm{sym}}:
+   \norm{D-1^{\otimes Q}}_{\cW_{dQ}}\le R_n\right\},
+ \qquad
+ R_n=2C_0\delta_n.
+ \label{B:eq:fixed-point-ball}
+\end{equation}
+For \(D\in\mathbb B_n\),
+\begin{align}
+ \sum_m\omega_m(D)
+ &\le C_1\norm{DJ_n}_{\cW_{dQ}}
+ \le C_1(1+R_n)\delta_n
+ \label{B:eq:weight-bound}\\
+ \norm{\Phi(D)-1^{\otimes Q}}_{\cW_{dQ}}
+ &\le C_F\sum_m\omega_m(D)
+ \le C_0(1+R_n)\delta_n.
+ \label{B:eq:phi-self-map-bound}
+\end{align}
+Since \(\delta_n=o(1)\), choose \(n\) so large that
+\begin{equation}
+ R_n\le1,
+ \qquad C_0\delta_n\le\tfrac12,
+ \qquad 2C_1\delta_n<1.
+ \label{B:eq:fixed-point-smallness}
+\end{equation}
+Then \eqref{B:eq:phi-self-map-bound} is at most
+\(2C_0\delta_n=R_n\), so \(\Phi(\mathbb B_n)\subseteq\mathbb B_n\).
+Equation \eqref{B:eq:phi-contraction} has contraction constant
+\(q_n=C_0\delta_n\le1/2\), and
+\eqref{B:eq:weight-bound} gives \(\sum_m\omega_m(D)<1\) throughout the ball.
+The weights are nonnegative by definition.  The ball \(\mathbb B_n\) is a
+closed subset of a Banach space, so Banach's theorem yields a unique fixed
+point
+\begin{equation}
+ D_Q=\Phi(D_Q)\in\mathbb B_n.
+ \label{B:eq:D-fixed-point}
+\end{equation}
+
+Use the probabilities \(\omega_m(D_Q)\) on labels carrying \(F_m\), and put
+the remaining probability on a label carrying \(F=1\).  This common label
+law is the \(H_k\)-marginal on both sides and, by
+\eqref{B:eq:D-fixed-point}, its \(Q\)-fold density moment is exactly \(D_Q\).
+Under \(P\), conditionally on every label, let \(U_k\sim\Pi_0\).  If
+\(\omega_m>0\), define
+\[
+ v_m=\frac{a_m(D_Q)}{\omega_m},
+ \qquad \norm{v_m}=K_0^{-1}<\delta_Q,
+\]
+and under \(Q\), conditionally on label \(m\), use the law \(\Pi_{v_m}\)
+from \cref{lem:moment-simplex}; on the remaining label use \(\Pi_0\).  If
+\(\omega_m=0\), no conditional law for that null label is needed.  All
+positive-mass conditional laws have the same fixed legal support.  Therefore
+\[
+ \E_Q[F^{\otimes Q}\Psi]-\E_P[F^{\otimes Q}\Psi]
+ =\sum_m\omega_mF_m^{\otimes Q}v_m
+ =\sum_ma_m(D_Q)F_m^{\otimes Q}
+ =D_QJ_n,
+\]
+which is \eqref{B:eq:master-moment}.  There is no circularity: the fixed
+point determines one common label law, and this law both generates
+\(D_Q\) and carries the moment perturbation.
+\end{proof}
+
+\subsection{Evaluated projectivity and ghost leakage}
+
+For \(q\le Q\), let
+\[
+ D_q(T_q)=\E F_{H_k}(u_1)\cdots F_{H_k}(u_q).
+\]
+Since every density atom has integral one,
+\begin{equation}
+ D_q(T_q)=\int D_Q(T_q,Z)\,dZ,
+ \label{B:eq:D-projectivity}
+\end{equation}
+where \(Z\in(\Torus^d)^{Q-q}\) and Haar measure is normalized.
+Define
+\begin{equation}
+ \overline\chi_q(T_q)
+ =\frac{\int D_Q(T_q,Z)\chi_Q(T_q,Z)\,dZ}{D_q(T_q)}.
+ \label{B:eq:chi-bar}
+\end{equation}
+Because every \(F\) is between fixed positive constants,
+\(D_q\) is bounded above and below, and \(0\le\overline\chi_q\le1\).
+
+A likelihood evaluation polynomial for one block means a polynomial in
+\(U_k\) of degree at most \(4Q\) that depends on \(U_k\) only through the
+retained linear evaluations
+\[
+ \psi_k(x_i)v_Q(\theta_k(x_i))^\top U_k,
+ \qquad i=1,\ldots,q.
+\]
+Such polynomials are exactly the block factors obtained after expanding a
+component Walsh coefficient.
+
+\begin{proposition}[Evaluated lower-order projectivity and ghost leakage]
+\label{B:prop:evaluated-projectivity}
+Let \(\mathcal L_{T_q}\) be any likelihood evaluation functional as above.
+If \(b_{\mathcal L,q}(T_q)\) denotes the corresponding ideal virtual moment
+increment at the retained sites, then
+\begin{equation}
+ \mathcal L_{T_q}
+ \left\{
+ \E_Q[F^{\otimes q}\Psi]-\E_P[F^{\otimes q}\Psi]
+ \right\}
+ =D_q(T_q)\overline\chi_q(T_q)b_{\mathcal L,q}(T_q).
+ \label{B:eq:evaluated-projectivity}
+\end{equation}
+Moreover,
+\begin{equation}
+ \int D_q(T_q)\{1-\overline\chi_q(T_q)\}\,dT_q
+ \le C_Qt^d\Lambda^{M_Q}.
+ \label{B:eq:ghost-mass}
+\end{equation}
+Projectivity is used only after evaluation; the tapered coefficient
+tensor itself need not be projective.
+\end{proposition}
+
+\begin{proof}
+Integrating \eqref{B:eq:master-moment} in the last \(Q-q\) coordinates gives
+the exact lower-order coefficient moment.  For
+\(T=(T_q,Z)\) with \(\chi_Q(T)>0\), the Lagrange identities imply
+\[
+ v_Q(u_j)^\top\left\{U+t\sum_{i=1}^Qc_i(T)\zeta_i\right\}
+ =v_Q(u_j)^\top U+t\zeta_j,
+ \qquad 1\le j\le q.
+\]
+Thus, after applying \(\mathcal L_{T_q}\), the ideal increment in
+\eqref{B:eq:ideal-increment} is independent of the ghost tuple \(Z\) and is
+exactly \(b_{\mathcal L,q}(T_q)\).  Pull it through the integral and use
+\eqref{B:eq:chi-bar}; this proves \eqref{B:eq:evaluated-projectivity}.
+
+For \eqref{B:eq:ghost-mass}, use Fubini and
+\eqref{B:eq:D-projectivity}:
+\begin{align*}
+ \int D_q(1-\overline\chi_q)
+ &=\iint D_Q(T_q,Z)\{1-\chi_Q(T_q,Z)\}\,dZ\,dT_q\\
+ &\le C_Q\abs{\{T\in(\Torus^d)^Q:\chi_Q(T)\ne1\}}.
+\end{align*}
+The result follows from \cref{lem:bad-volume}.
+\end{proof}
+
+\section{Case B: global priors and parameter legality}
+
+\subsection{The two parameter fields}
+
+Take independent copies of the local carrier from \cref{B:prop:carrier} over
+all active blocks.  For a coefficient realization, form \(p\) by
+\eqref{B:eq:p-field}, and define the two sides by \eqref{B:eq:two-sides}.  On the
+\(Q\)-side the actual coefficient draws are those supplied by
+\(\nu_{Q,k}\); the virtual shifts are used only to identify the finite
+moments of the mixed likelihood.
+
+\begin{lemma}[Hölder legality and positivity]
+\label{B:lem:legality}
+For sufficiently small fixed \(c_a,c_b>0\), every parameter draw on both
+sides belongs to \(\cP(\alpha,\beta,\gamma)\), apart from the design density,
+which is handled in the next subsection.  Moreover,
+\begin{equation}
+ \tau_P(x_0)-\tau_Q(x_0)=c_ac_b\Delta.
+ \label{B:eq:separation}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+By the Hölder scaling rule (\cref{lem:holder-scaling}), all packet fields
+used below satisfy, for each fixed \(t\),
+\begin{equation}
+ \norm P_{C^t}+\norm{P'}_{C^t}+\norm{q_4}_{C^t}
+ \le C_{t,Q}r^{-t},
+ \qquad
+ \norm{G_h}_{C^t}\le C_t h^{-t}\le C_tr^{-t}.
+ \label{B:eq:packet-holder-scaling}
+\end{equation}
+
+Since \(a=c_ar^\alpha\), \eqref{B:eq:packet-holder-scaling} gives
+\[
+ \norm p_{C^\alpha}+\norm{p'}_{C^\alpha}
+ \le C_Qc_a.
+\]
+Thus the two propensity fields lie in the prescribed Hölder ball after
+choosing \(c_a\) sufficiently small.
+
+Next write \(p'=aP'\).  From \eqref{B:eq:cubic},
+\begin{equation}
+ K_x(p')
+ =b\left[\{1+\eta(x)\}P'-\frac{a^2(P')^3}{3}\right].
+ \label{B:eq:k-smoothness}
+\end{equation}
+The fixed-overlap packet calculus and \eqref{B:eq:packet-holder-scaling} give
+\[
+ \norm{P'}_{C^\beta}+\norm{(P')^3}_{C^\beta}
+ \le C_Qr^{-\beta}.
+\]
+Moreover,
+\[
+ \norm\eta_\infty\le C_Qa^2t^2,
+ \qquad
+ \norm\eta_{C^\beta}\le C_Qa^2t^2r^{-\beta},
+\]
+because \(r<h\), \(q_4\) varies at scale \(r\), and \(G_h\) varies at
+scale \(h\).  The Hölder product inequality therefore yields
+\begin{align*}
+ \norm{K_x(p')}_{C^\beta}
+ &\le C_Qbr^{-\beta}\{1+a^2+a^2t^2\}\\
+ &\le C_Qc_b,
+\end{align*}
+since \(b=c_br^\beta\), \(a\le1\), and \(t\to0\).  The same estimate holds
+for \(K_x(p)\).
+
+The identity \(a\,b\,t^2=c_ac_b\Delta\) gives
+\begin{equation}
+ d_*(x)=c_ac_b\Delta G_h(x)^2,
+ \qquad
+ \norm{d_*}_{C^\gamma}
+ \le Cc_ac_b\Delta h^{-\gamma}=Cc_ac_b.
+ \label{B:eq:dstar-smooth}
+\end{equation}
+Since \(\gamma>A_0>\beta\), also
+\[
+ \norm{d_*}_{C^\beta}
+ \le Cc_ac_b\Delta h^{-\beta}
+ =Cc_ac_bh^{\gamma-\beta}.
+\]
+Although a draw of \(p\) is smooth, its \(C^\beta\) norm can grow when
+\(\beta>\alpha\); the small target amplitude compensates for this.  Indeed,
+using the Hölder product inequality and
+\eqref{B:eq:packet-holder-scaling},
+\begin{align*}
+ \norm{d_*p}_{C^\beta}
+ &\le C_Q\left\{
+   \Delta a r^{-\beta}+a\Delta h^{-\beta}
+   \right\}\\
+ &\le C_Q\left\{c_at^2r^{2\alpha}
+          +a h^{\gamma-\beta}\right\}
+ =o(1).
+\end{align*}
+Here
+\(\Delta a r^{-\beta}=c_at^2r^{2\alpha}\), because
+\(t^2=\Delta r^{-A_0}\) and \(A_0=\alpha+\beta\).  Consequently
+\[
+ u_x(p)-d_*(1+p)=K_x(p)-d_*(1+2p)
+\]
+has \(C^\beta\) norm at most \(C_Qc_b+o(1)\).  Choose \(c_b\)
+first, then \(n\) large, so that this lies within the remaining radius of
+the prescribed outcome ball about \(1/2\).  This proves the required
+smoothness of both baseline outcome regressions, while
+\eqref{B:eq:dstar-smooth} proves the \(C^\gamma\) bound for the treatment
+effect.
+
+All coded fields have sup norm tending to zero with \(c_a,c_b\) fixed and
+small: \(p=O(a)\), \(K_x(p)=O(b)\), and \(d_*=O(\Delta)\).  First choose
+\(c_a,c_b\) small enough to fit the fixed Hölder radii, and then take \(n\)
+large enough.  The treatment propensity and both Bernoulli outcome means are
+then contained in \([\kappa,1-\kappa]\) on every draw.  Finally,
+\(G_h(x_0)=1\), \(\tau_P=d_*\), and \(\tau_Q=0\), so
+\[
+ \tau_P(x_0)-\tau_Q(x_0)=c_ac_b\Delta.
+\]
+\end{proof}
+
+\subsection{Design density and tilt}
+
+Transfer each torus factor to its physical carrier cube and set it equal to
+one outside that cube.  Write this physical factor again as \(F_{H_k}(x)\).
+It satisfies
+\[
+ \int_{S_k}\{F_{H_k}(x)-1\}\,dx=0.
+\]
+Define
+\begin{equation}
+ \widetilde f_H(x)
+ =\prod_{k:x\in S_k}F_{H_k}(x),
+ \qquad
+ Z(H)=\int_{[0,1]^d}\widetilde f_H(x)\,dx,
+ \qquad
+ f_H=\widetilde f_H/Z(H).
+ \label{B:eq:density}
+\end{equation}
+Let \(N_1\) be the maximal number of carrier boxes \(S_k\) containing a
+point (a fixed number).  Then
+\begin{equation}
+ \frac{(1-\eta_f)^{N_1}}{(1+\eta_f)^{N_1}}
+ \le f_H(x)\le
+ \frac{(1+\eta_f)^{N_1}}{(1-\eta_f)^{N_1}}.
+ \label{B:eq:density-bounds}
+\end{equation}
+Choose \(\eta_f>0\) sufficiently small that these bounds lie inside
+\([\underline f,\overline f]\).  Let \(\nu_S=\bigotimes_k\nu_{S,k}\),
+\(S\in\{P,Q\}\); their \(H\)-marginals are identical
+(\cref{B:prop:carrier}).  Apply \cref{lem:tilt} (with \(\lambda\) trivial):
+the tilted priors \eqref{eq:z-tilt} induce the same law of \(f_H\) and the
+same \(X^n\)-marginal, and the mixed joint density is given by
+\eqref{eq:z-cancel} with the product law \(\nu_S\) restored.
+
+\section{Case B: fixed-sample information bound}
+
+\subsection{Partial-jitter stability}
+
+For a subset \(\cS\) of the active blocks at a site, define
+\[
+ \delta_{\cS}
+ =a\,t\sum_{k\in\cS}\psi_k\zeta_k,
+ \qquad
+ v_{\cS}=\E\delta_{\cS}^2\le v,
+ \qquad
+ m_{4,\cS}=\E\delta_{\cS}^4\le3v_{\cS}^2\le3v^2.
+\]
+The exact partial moments are
+\begin{align}
+ \E K_x(p+\delta_{\cS})
+ &=K_x(p)-\frac ba p v_{\cS},
+ \label{B:eq:partial-k}\\
+ \E\{(p+\delta_{\cS})K_x(p+\delta_{\cS})\}
+ &=pK_x(p)+c_1v_{\cS}
+   +c_3\{6p^2v_{\cS}+m_{4,\cS}\}.
+ \label{B:eq:partial-pk}
+\end{align}
+
+\begin{lemma}[Uniform stability under partial block shifts]
+\label{B:lem:partial-stability}
+Fix \(q\le Q\), a baseline coefficient realization, and any subset of the
+blocks meeting the \(q\) sites.  Average only the virtual jitters in that
+subset.  Every joint \(q\)-site Walsh coefficient differs from the
+corresponding \(P\)-side coefficient by at most \(C_Q\Delta\).  If all
+active blocks are shifted, the difference is zero.
+\end{lemma}
+
+\begin{proof}
+The propensity coefficient at a site remains \(p\).  Since
+\(v=a^2t^2G_h^2\), \(d_*=(b/a)v\), and \(\abs p\le Ca\),
+\eqref{B:eq:partial-k} differs from the full-jitter value by at most
+\[
+ \frac ba\abs p\,(v-v_{\cS})\le C d_*.
+\]
+Using \(c_1=(b/a)(1+\eta)\), \(c_3=-b/(3a)\), and
+\(m_{4,\cS}\le3v^2\), the difference between
+\eqref{B:eq:partial-pk} and the full-jitter value is also at most \(Cd_*\).
+Here the terms are bounded respectively by
+\((b/a)v=d_*\), \((b/a)p^2v\le Ca^2d_*\), and
+\((b/a)v^2=d_*v\).  Since \(d_*(x)\le C\Delta\), each one-site outcome
+Walsh coefficient differs from its target value by \(C\Delta\).
+
+Conditional on the baseline field, site signs are independent.  Hence a
+joint Walsh coefficient is a product of one-site coefficients, and a
+finite telescoping bound gives \(C_Q\Delta\).  A product containing only
+propensity characters is unchanged exactly: each site propensity appears
+only once, and every nonempty jitter term has an odd site sign and averages
+to zero.  When all active blocks are shifted,
+\cref{B:lem:cubic} gives exact equality.
+\end{proof}
+
+\subsection{Component factorization and the local discrepancy}
+
+Condition on the common design \(X^n=x^n\), and write
+\(\mathcal K_i=\{k:x_i\in S_k\}\).  Relative to counting measure on the
+binary signs, the tilted mixed joint density has the exact form
+\begin{equation}
+ \overline p_S(x^n,w^n)
+ =\frac{4^{-n}}{\E Z(H)^n}
+  \int
+  \prod_k\left\{\prod_{i:k\in\mathcal K_i}F_{H_k}(x_i)\right\}
+  \prod_{i=1}^nL_{S,i}(w_i\mid x_i,U_{\mathcal K_i})
+  \,d\nu_S(H,U),
+ \label{B:eq:mixed-joint-factorization}
+\end{equation}
+where \(S\in\{P,Q\}\), and the common \(X^n\) density is obtained by
+removing the likelihood factors.  Formula
+\eqref{B:eq:mixed-joint-factorization} follows directly from
+\eqref{eq:z-cancel}; in particular, no residual \(Z(H)\)-dependence remains.
+
+Form the bipartite incidence graph whose vertices are the observations and
+the active block labels, with an edge \(i\sim k\) when
+\(k\in\mathcal K_i\).  Equivalently, connect observations \(i,j\) when
+\(\mathcal K_i\cap\mathcal K_j\ne\varnothing\).  Distinct connected
+components have disjoint block-label sets.  Since \(\nu_S\) is a product
+over blocks, both the integral in \eqref{B:eq:mixed-joint-factorization} and
+the analogous design integral factor exactly over the connected components.
+The common global factor \(\{\E Z(H)^n\}^{-1}\) cancels when conditioning on
+\(X^n=x^n\).  Hence the conditional mixed laws of \((R_i,T_i)\) factor
+exactly over the component graph, including when physical carrier boxes
+overlap.
+
+Consider a component of size \(q\le Q\).  Expand each of its finitely many
+Walsh coefficients in block coefficient monomials.  At one observation the
+degree in the aggregate propensity is at most four: \(p\) is linear,
+\(K(p)\) is cubic, and \(pK(p)\) is quartic.  Therefore the degree in every
+block is at most \(4q\le4Q\), so \cref{B:prop:carrier} applies.
+
+For a block meeting \(q_k\) sites in the component,
+\cref{B:prop:evaluated-projectivity} says that its lower-order moment vector
+is exactly the convex interpolation, with coefficient
+\(\overline\chi_{q_k}\), between the baseline moment and the ideal shifted
+moment.  Multiplying over the finitely many blocks shows that each component
+Walsh coefficient under the \(Q\)-mixture is a convex combination of the
+partial-shift Walsh coefficients from \cref{B:lem:partial-stability}.  The
+weight of the fully shifted term is the product of the block
+\(\overline\chi_{q_k}\)'s.  Consequently, for every binary cell \(w\),
+\begin{equation}
+ \abs{p_{Q,C}(w\mid x_C)-p_{P,C}(w\mid x_C)}
+ \le C_Q\Delta
+ \sum_{k\in\mathcal K(C)}
+ \{1-\overline\chi_{q_k}(T_k)\}.
+ \label{B:eq:component-cell-difference}
+\end{equation}
+All fixed-parameter binary cells are bounded below by a positive constant,
+so every \(q\)-site mixed cell is bounded below by a constant depending only
+on \(Q\).  The Walsh transform is finite-dimensional and orthogonal.
+Therefore
+\begin{equation}
+ H_C^2(x_C)
+ \le C_Q\Delta^2
+ \sum_{k\in\mathcal K(C)}
+ \{1-\overline\chi_{q_k}(T_k)\}.
+ \label{B:eq:component-hellinger-local}
+\end{equation}
+We used \((\sum b_k)^2\le C_Q\sum b_k\), valid because the number of blocks
+in a \(q\)-component is bounded and \(0\le b_k\le1\).
+
+\subsection{Geometry and low components}
+
+The common mixed design is not necessarily iid, but every fixed
+\(q\)-coordinate marginal density is at most \(\overline f^{\,q}\), because
+conditionally on \(H\) the density is bounded by \(\overline f\).  A
+labelled connected \(q\)-tuple has one point in the \(O(h^d)\) active region
+and, after choosing a spanning tree, every other point in an \(O(r^d)\)
+neighborhood of its parent.
+
+We insert the ghost factor explicitly.  Fix a labelled connected
+\(q\)-tuple, one of its incident blocks \(k_*\), and let
+\(I_*\subseteq\{1,\ldots,q\}\) be the \(q_*\ge1\) sites lying in
+\(S_{k_*}\).  There are \(O(h^dr^{-d})\) possible active choices of
+\(k_*\).  In affine coordinates on \(S_{k_*}\), the integral of the
+corresponding leakage factor satisfies
+\begin{align}
+ &\int_{S_{k_*}^{q_*}}
+   \{1-\overline\chi_{q_*}(T_{k_*})\}
+   \,dx_{I_*}
+ \nonumber\\
+ &\hspace{2cm}\le
+ C_Qr^{dq_*}t^d\Lambda^{M_Q}.
+ \label{B:eq:physical-ghost-integral}
+\end{align}
+Indeed, the affine Jacobian is \(C r^{dq_*}\), and
+\eqref{B:eq:ghost-mass} applies after using the fixed positive lower bound on
+\(D_{q_*}\).  Because the observation component is connected, the remaining
+\(q-q_*\) sites can be attached to the set \(I_*\) by a labelled forest with
+exactly \(q-q_*\) edges.  Each attachment forces the child into an
+\(O(r^d)\) neighborhood of its parent.  Thus, for fixed \(k_*\), the
+remaining integration contributes at most \(C_Qr^{d(q-q_*)}\).  Multiplying
+by the number \(O(h^dr^{-d})\) of choices of \(k_*\) gives exactly
+\[
+ C_Qh^dr^{d(q-1)}t^d\Lambda^{M_Q}.
+\]
+The number of labelled forests and the number of incident blocks in a
+\(q\)-component are bounded in terms of \(Q\), and the mixed-design
+\(q\)-marginal is bounded by \(\overline f^{\,q}\).  Summing
+\eqref{B:eq:component-hellinger-local} therefore gives, for
+\(2\le q\le Q\),
+\begin{align}
+ \E\sum_{\substack{C:\,\abs C=q}}H_C^2
+ &\le C_Qn^q h^dr^{d(q-1)}t^d\Delta^2\Lambda^{M_Q}
+ \nonumber\\
+ &=C_Q n^q h^dr^{d(q-2)}\ell^d\Delta^2\Lambda^{M_Q}
+ \nonumber\\
+ &=C_Q\{n^2h^d\ell^d\Delta^2\}
+       (nr^d)^{q-2}\Lambda^{M_Q}
+ =o(1).
+ \label{B:eq:low-hellinger}
+\end{align}
+For singleton components, fix an incident block \(k_*\), sum over its
+\(O(h^dr^{-d})\) possible locations, and use
+\eqref{B:eq:physical-ghost-integral} with \(q_*=1\).  There is no forest edge,
+so the same calculation gives
+\begin{equation}
+ \E\sum_{\substack{C:\,\abs C=1}}H_C^2
+ \le C_Qnh^dt^d\Delta^2\Lambda^{M_Q}=o(1).
+ \label{B:eq:single-hellinger}
+\end{equation}
+The final equalities use \cref{lem:ledgers} and \(nr^d=o(1)\).  Fixed
+powers of \(\Lambda\) are absorbed by the strictly negative powers of
+\(n\).
+
+\subsection{High components}
+
+Every component larger than \(Q\) contains a connected labelled subset of
+size \(Q+1\).  The spanning-tree volume bound and the mixed-design upper
+bound give
+\begin{equation}
+ \PP\{\text{some component has size }>Q\}
+ \le C_Qn^{Q+1}h^dr^{dQ}=o(1)
+ \label{B:eq:high-components}
+\end{equation}
+by \eqref{eq:high}.  These configurations are handled as the
+exceptional event in Lemma~\ref{lem:components}; no sum of uncontrolled
+high-component Hellinger distances is needed.
+
+\subsection{Total variation and Le Cam}
+
+Let \(\overline P_n,\overline Q_n\) denote the two prior mixtures.  Their
+\(X^n\)-marginals coincide, and given the design the conditional laws
+factor over the component graph; on the event of no high component every
+component has at most \(Q\) sites.  \Cref{lem:components} with
+\eqref{B:eq:low-hellinger}, \eqref{B:eq:single-hellinger}, and
+\eqref{B:eq:high-components} gives
+\[
+ \TV(\overline P_n,\overline Q_n)
+ \le \PP\{\text{a high component}\}
+ +\Bigl\{\E\sum_{C:\,|C|\le Q} H_C^2\Bigr\}^{1/2}
+ =o(1).
+\]
+In particular,
+\begin{equation}
+ \TV(\overline P_n,\overline Q_n)\le\tfrac12
+ \label{B:eq:tv-bound}
+\end{equation}
+for all sufficiently large \(n\).
+
+Every draw from the \(P\)-prior has target value
+\(c_ac_b\Delta\), and every draw from the \(Q\)-prior has target value zero
+(\cref{B:lem:legality}).  \Cref{lem:two-point} gives
+\[
+ \sup_{P\in\cP}\E_P\abs{\widehat\tau(x_0)-\tau_P(x_0)}
+ \ge \frac{c_ac_b\Delta}{2}\{1-\TV(\overline P_n,\overline Q_n)\}
+ \ge \frac{c_ac_b}{4}\,n^{-(\rho+\varepsilon)}.
+\]
+This proves \cref{thm:main} in case~(B) for all sufficiently small fixed
+\(\varepsilon>0\).  For any prescribed \(\varepsilon>0\), choose a fixed
+\(0<\varepsilon_0\le\varepsilon\) in that range and use
+\(n^{-(\rho+\varepsilon_0)}\ge n^{-(\rho+\varepsilon)}\), changing the
+constant if necessary.
+
+
+\part{Case C: mixed smoothness}
+
+\section{Case C: construction}\label{C:sec:construction}
+
+Throughout Part~C exactly one of \(\alpha,\beta\) exceeds one:
+case~(a) \(\alpha\le1<\beta\), case~(b) \(\beta\le1<\alpha\); thus
+\(s_1=(1+\alpha\wedge\beta)/2\) and the scales are those of
+Section~\ref{sec:scales}.  The degree
+\[
+ \dg=\begin{cases}1&\text{in case (a)},\\3&\text{in case (b)}\end{cases}
+\]
+is the degree of the likelihood cells in the carried coefficients and the
+degree of the carrier algebra of Section~\ref{C:sec:carrier}.
+
+\subsection{Amplitudes}
+In both cases the rough nuisance has amplitude \(c\,\ell^{\text{(its
+exponent)}}\), the smooth nuisance has amplitude \(c\,r^{\text{(its
+exponent)}}\) and receives a virtual jitter of relative size \(t\):
+\begin{equation}
+\begin{array}{c|ccc|c}
+ &\text{rough amplitude}&\text{smooth amplitude}&\text{jitter}&\\ \hline
+ \text{(a) }\alpha\le1<\beta&\ja=c_a\ell^\alpha&b=c_br^\beta&\jb=bt=c_btr^\beta&\jsh=\jb,\ \jfi=\ja\\
+ \text{(b) }\beta\le1<\alpha&\jb=c_b\ell^\beta&a=c_ar^\alpha&\ja=at=c_atr^\alpha&\jsh=\ja,\ \jfi=\jb
+\end{array}
+\label{C:eq:amplitudes}
+\end{equation}
+Here \(\jsh\) (the \emph{shift amplitude}) is the jitter of the smooth
+nuisance and \(\jfi\) (the \emph{field amplitude}) the amplitude of the
+rough one.  In both cases
+\begin{equation}
+ \ja\jb=c_ac_b\Delta,\qquad
+ d_*(x):=\ja\jb G_h(x)^2=c_ac_b\Delta G_h(x)^2,\qquad
+ \frac{\jsh}{\jfi}=\frac{c_\circ}{c_\bullet}\,t^{1-(\alpha\wedge\beta)}r^{\abs{\alpha-\beta}}\to0,
+ \label{C:eq:jsh-over-jfi}
+\end{equation}
+where \(G_h(x)=G((x-x_0)/h)\) for a fixed \(G\in C_c^\infty\) with
+\(G(0)=1\), \(0\le G\le1\); the first identity is
+\(\ell^{\alpha\wedge\beta}\,t\,r^{\alpha\vee\beta}=t^{1+\alpha\wedge\beta}r^{A_0}=t^{2s_1}r^{A_0}=\Delta\),
+and the last uses \(\alpha\vee\beta>1\ge\alpha\wedge\beta\): the factor
+\(r^{\abs{\alpha-\beta}}\) tends to zero because \(\alpha\ne\beta\), and
+\(t^{1-\alpha\wedge\beta}\le1\).  Hence, for large \(n\),
+\begin{equation}
+ \jsh\le\jfi,\qquad \jsh^2\le\jsh\jfi=c_ac_b\Delta .
+ \label{C:eq:jsh-square}
+\end{equation}
+
+\subsection{Blocks and rough packets}
+\emph{Blocks.}  Let \(\phi_{\rm lin}\in C_c^\infty(\R^d)\) be a
+nonnegative partition-of-unity bump: \(\phi_{\rm lin}\ge0\),
+\(\operatorname{supp}\phi_{\rm lin}\subseteq[-1,1]^d\), \(\phi_{\rm lin}>0\)
+on \((-1,1)^d\), and \(\sum_{k\in\mathbb Z^d}\phi_{\rm lin}(u-k)\equiv1\)
+(take \(\phi_{\rm lin}=\vartheta_0/\sum_k\vartheta_0(\cdot-k)\) for a
+nonnegative \(\vartheta_0\in C_c^\infty\) positive on \((-1,1)^d\) and
+supported in \([-1,1]^d\); the denominator is bounded below by
+\(\vartheta_0\) at the nearest lattice point).  By compactness there is a
+constant \(c_d\in(0,1]\), depending only on \(d\) and the fixed bump, with
+\begin{equation}
+ \phi_{\rm lin}\ge c_d\quad\text{on }[-3/4,3/4]^d .
+ \label{C:eq:cd}
+\end{equation}
+Put \(x_k=x_0+rk\) and
+\(\psi_k(x)=\phi_{\rm lin}((x-x_k)/r)\), so \(0\le\psi_k\le1\),
+\(\sum_k\psi_k\equiv1\), and \(\psi_k\ge c_d\) on \(x_k+[-3r/4,3r/4]^d\).
+Enlarge each support to a cube \(S_k\) of side \(Cr\), identified with
+\(\Torus^d\) by an affine chart \(\theta_k\); \(\operatorname{supp}\psi_k\)
+lies in a fixed compact subcube.  Let \(N_1\) be the maximal number of
+enlarged cubes \(S_k\) containing a given point (a fixed number, \(\le C^d\)); a
+fortiori at most \(N_1\) supports \(\operatorname{supp}\psi_k\) meet a point.
+Active blocks are those meeting \(\operatorname{supp}G_h\); there are
+\(O(h^dr^{-d})\).  Lagrange vectors \(c_{ki}(T)=c_i(T)\) for tuples in
+block \(k\) are those of Lemma~\ref{lem:lagrange}, and the taper
+is \(\chi_Q(T)=\prod_{i=1}^Q\vartheta(P_i(T)/t_n)\) with the fixed cutoff
+\(\vartheta\) of Section~\ref{sec:torus} (\(\vartheta=0\) on \([0,1]\), \(=1\) on \([2,\infty)\)).
+
+\emph{Rough packets.}  The rough packets \(\psi^\flat_m\), the rough field
+\(\Lambda_\lambda\), the packet sets \(J(x)\), the constants \(N_0,R_0\), and
+the moments \(M_j=\E\Lambda_\lambda^j\) (in particular \(M_2=G_h^2\),
+\(M_4=\mu_4=G_h^4\{3-2q_4\}\)) are those of Section~\ref{sec:tools},
+\eqref{eq:rough}--\eqref{eq:rough-moments}, at the fine scale \(\ell=tr\)
+of \eqref{eq:fine}.  Case~(a) uses only \(M_0,M_1,M_2\); case~(b) also
+uses \(M_3=0\) and \(M_4\).
+
+\subsection{Assignment of sites to blocks}\label{C:sec:assign}
+The block partition \(\{\psi_k\}\) is smooth with constant overlap, which
+is required for the smoothness of the carried field below.  The carrier
+of Section~\ref{C:sec:carrier}, however, needs every site to receive its
+virtual jitter from a \emph{single} block, up to a set of sites of small
+relative volume.  Let \(C_k=x_k+[-r/2,r/2)^d\) be the cubes of the lattice
+\(\{x_k\}\), so that \(\{C_k\}\) partitions \(\R^d\); recall from
+\eqref{C:eq:cd} that \(\psi_k\ge c_d\) on the enlarged cube
+\(x_k+[-3r/4,3r/4]^d\).  Let
+\begin{equation}
+ w=t^d
+ \label{C:eq:layer-width}
+\end{equation}
+be the relative transition width, and construct the assignment partition
+as a tensor product of one-dimensional ones: let \(\varrho_w\) be a fixed
+smooth probability density on \(\R\) supported in \([-w/2,w/2]\) (a fixed
+bump rescaled to width \(w\)), \(\sigma=\varrho_w*\one_{[-1/2,1/2)}\), and
+\begin{equation}
+ \phi_k(x)=\prod_{j=1}^d\sigma\Bigl(\frac{x^{(j)}-x_k^{(j)}}r\Bigr),\qquad x\in\R^d .
+ \label{C:eq:phi-def}
+\end{equation}
+Since \(\sum_{l\in\mathbb Z}\one_{[-1/2,1/2)}(y-l)\equiv1\), also
+\(\sum_l\sigma(y-l)\equiv1\), hence \(\sum_k\phi_k\equiv1\); moreover
+\(0\le\phi_k\le1\), \(\operatorname{supp}\phi_k\subseteq x_k+[-(1+w)r/2,(1+w)r/2]^d\subseteq x_k+[-3r/4,3r/4]^d\),
+and \(\phi_k=1\) on \(\{x\in C_k:\operatorname{dist}_\infty(x,\partial C_k)\ge wr/2\}\).
+Sites with \(\phi_k(x)=1\) for some \(k\) are \emph{interior} and are
+\emph{assigned} to that block, \(k(x)=k\); the remaining set
+\(\mathcal L=\{x:0<\phi_k(x)<1\text{ for some }k\}\) is the
+\emph{transition layer}.  It is contained in the union over \(k\) of the
+\(wr\)-neighbourhoods of \(\partial C_k\), so its relative volume in every
+cube \(C_k\) is at most \(2dw=2dt^d\).  Put
+\begin{equation}
+ m_k(x)=\frac{\phi_k(x)}{\psi_k(x)}\one\{\phi_k(x)>0\},\qquad 0\le m_k\le c_d^{-1} ,
+ \label{C:eq:multiplier}
+\end{equation}
+which is smooth because \(\psi_k\ge c_d\) on \(\operatorname{supp}\phi_k\)
+by \eqref{C:eq:cd}; \(c_d^{-1}\) is a fixed constant and enters the bounds
+below only through the constant \(N_m\) of \eqref{C:eq:Nm}.
+
+\begin{lemma}[Wiener norm of the multiplier]\label{C:lem:multiplier}
+In the chart of block \(k\), \(\norm{m_k\circ\theta_k^{-1}}_{\cW_d}\le C_d\{1+\log(1/w)\}^d\le C_d\Lambda^d\).
+\end{lemma}
+\begin{proof}
+\emph{One-dimensional step.}  On the circle of length one identify
+\(\sigma(\cdot)\) (after the affine chart, the cube \(S_k\) of side \(Cr\)
+becomes \(\Torus^d\) and \(x\mapsto(x-x_k)/r\) becomes a fixed dilation, so
+we may work with \(\sigma\) on an interval of fixed relative length and
+transition width \(w'=w/C\)).  Its Fourier coefficients are
+\(\widehat\sigma(\nu)=\widehat{\one}(\nu)\widehat{\varrho}(\nu)\) with
+\(\abs{\widehat{\one}(\nu)}\le C/\abs\nu\) (\(\nu\ne0\)) and, by smoothness of
+the bump, \(\abs{\widehat\varrho(\nu)}\le C_K(1+w'\abs\nu)^{-K}\) for every
+\(K\).  Hence
+\[
+ \sum_\nu\abs{\widehat\sigma(\nu)}\le C+\sum_{1\le\abs\nu\le1/w'}\frac C{\abs\nu}
+ +\sum_{\abs\nu>1/w'}\frac{C_K}{\abs\nu(w'\abs\nu)^K}\le C\{1+\log(1/w')\}.
+\]
+\emph{Tensor product.}  In the chart, \(\phi_k\circ\theta_k^{-1}\) is the
+product over the \(d\) coordinates of such one-dimensional functions, and
+the Wiener norm of a tensor product is the product of the Wiener norms;
+so \(\norm{\phi_k\circ\theta_k^{-1}}_{\cW_d}\le C_d\{1+\log(1/w)\}^d\).
+\emph{The factor \(1/\psi_k\).}  Let \(\zeta\) be a fixed smooth function
+on \(\Torus^d\) equal to \(1/(\psi_k\circ\theta_k^{-1})\) on
+\(\{\psi_k\circ\theta_k^{-1}\ge c_d\}\) (which contains the support of
+\(\phi_k\circ\theta_k^{-1}\)); \(\zeta\) does not depend on \(k\) or \(n\)
+because \(\psi_k\circ\theta_k^{-1}\) is the same fixed bump for every block,
+so \(\norm\zeta_{\cW_d}\le C\).  Then \(m_k\circ\theta_k^{-1}=(\phi_k\circ\theta_k^{-1})\zeta\)
+and the algebra property of \(\cW_d\) gives the claim.  Finally, by
+\eqref{eq:fine},
+\[
+ \log(1/w)=d\log(1/t)=\frac{d(z-\xi A_0)}{2s_1}\log n=O(\log n)=O(\Lambda).
+\]
+\end{proof}
+
+\subsection{Fields, virtual shift, and the two hypotheses}\label{C:sec:fields}
+Only active blocks carry coefficients: \(U=(U_k)_{k\ \rm active}\),
+\(U_k\in\R^M\), and the \emph{legal ball} is \(\{\norm{U_k}\le R_U\ \forall k\}\)
+for a fixed \(R_U\) with \(2\mathbb B_0\subseteq\{\norm U\le R_U\}\), where
+\(\mathbb B_0\) is the support ball of \(\Pi_0\).  The \emph{carried
+field} (unit amplitude) is
+\begin{equation}
+ \cf(x)=\sum_{k\ \rm active}\psi_k(x)v_Q(\theta_k(x))^\top U_k .
+ \label{C:eq:carried}
+\end{equation}
+Let \(T_k=(x_1,\dots,x_Q)\) be a full \(Q\)-tuple in block \(k\), with
+\(\chi_Q(\theta_k(T_k))>0\); the Lagrange vectors below are evaluated at
+its chart coordinates.  The \emph{virtual shift} of block \(k\) is
+\begin{equation}
+ \widetilde U_k=U_k+t\sum_{i=1}^Qm_k(x_i)\Lambda_\lambda(x_i)\,c_{ki}(T_k)
+ +(\text{moment corrections, Section~\ref{C:sec:target}}).
+ \label{C:eq:shift}
+\end{equation}
+For \(q<Q\) retained sites, the remaining \(Q-q\) sites are auxiliary
+integration variables, removed after likelihood evaluation as in
+Section~\ref{C:sec:projectivity}.  In particular, \(\chi_Q\) is never
+applied to a tuple of length less than \(Q\).
+\(\widetilde U_k\) is a bookkeeping expression, not a random variable of
+the construction: the actual parameters below contain only \(U_k\), and
+\eqref{C:eq:shift} records which moments the carrier reproduces.
+By \(v_Q(\theta_k(x_j))^\top c_{ki}(T_k)=\one\{i=j\}\), the first sum
+changes \(\cf(x_j)\) by
+\[
+ \psi_k(x_j)\,t\,m_k(x_j)\Lambda_\lambda(x_j)=t\phi_k(x_j)\Lambda_\lambda(x_j);
+\]
+summing over the blocks meeting \(x_j\) and using \(\sum_k\phi_k=1\), the
+total change of \(\cf(x_j)\) at a fully shifted site is
+\(t\Lambda_\lambda(x_j)\), coming from the assigned block alone when the
+site is interior.  The fields and the two hypotheses are, in coded
+coordinates:
+
+\emph{Case (a)} (\(\alpha\le1<\beta\)): \(p_\lambda=\ja\Lambda_\lambda\),
+\(y_0=b\,\cf\), site jitter \(\delta=bt\Lambda_\lambda=\jb\Lambda_\lambda\), and
+\begin{equation}
+\begin{array}{c|ccc}
+ &p=2\pi-1&y=2\mu_0-1&\tau\\ \hline
+ P&p_\lambda&y_0-d_*&d_*\\
+ Q&p_\lambda&y_0&0\\ \hline
+ Q\text{ (virtual)}&p_\lambda&y_0+\delta&0
+\end{array}
+\label{C:eq:two-sides-a}
+\end{equation}
+
+\emph{Case (b)} (\(\beta\le1<\alpha\)): \(p_0=a\,\cf\), site jitter
+\(\delta=at\Lambda_\lambda=\ja\Lambda_\lambda\),
+\(y_\lambda(\cdot;p)=\jb\Lambda_\lambda\{1+\eta-p^2\}\) with the
+fourth-moment correction
+\begin{equation}
+ \eta(x):=\ja^2G_h(x)^2\{3-2q_4(x)\}\ge0,
+ \qquad
+ \norm\eta_\infty\le3\ja^2,\quad \norm\eta_{C^\beta}\le C\ja^2\ell^{-\beta},\quad
+ d_*\eta=\ja^3\jb\mu_4 ,
+ \label{C:eq:eta}
+\end{equation}
+defined for every \(x\) and equal to \(\ja^2\mu_4(x)/G_h(x)^2\) wherever
+\(G_h(x)\ne0\) (by \eqref{eq:rough-moments}); the last identity holds
+everywhere, both sides vanishing where \(G_h=0\),
+and
+\begin{equation}
+\begin{array}{c|ccc}
+ &p=2\pi-1&y=2\mu_0-1&\tau\\ \hline
+ P&p_0&y_\lambda(\cdot;p_0)-d_*(1+3p_0)&d_*\\
+ Q&p_0&y_\lambda(\cdot;p_0)&0\\ \hline
+ Q\text{ (virtual)}&p_0+\delta&y_\lambda(\cdot;p_0+\delta)&0
+\end{array}
+\label{C:eq:two-sides-b}
+\end{equation}
+
+In both tables the rows \(P\) and \(Q\) are the \emph{actual}
+parameters: under both hypotheses the coefficients \(U_k\) of the carried
+field are drawn from the laws of Proposition~\ref{C:prop:carrier}, the
+rough signs from the same Rademacher prior, and no parameter contains
+\(\delta\).  The row ``\(Q\) (virtual)'' is not a parameter of any law in
+the mixture; it is the \emph{jittered} parameter used in the single-site
+identities of Section~\ref{C:sec:bridge} and in the target of
+Section~\ref{C:sec:target}.  Its role is the following.  The two carrier
+laws differ only in the law of \(U_k\) given the design, and
+Proposition~\ref{C:prop:carrier}(iv) states that this difference, tested
+against any likelihood cell, equals the tapered, design-weighted moment
+increment \(\cJ(\mathbb D)\) built from the jittered parameter.  This is a
+moment identity with a taper and with the moment corrections of
+Section~\ref{C:sec:target}; it does not say that the shifted coefficients
+\eqref{C:eq:shift} are the values of a random vector under \(Q\).  In case~(b)
+the \(Q\)-side outcome is a deterministic quadratic function of the
+propensity and of the rough field: this is the cubic bridge of Part~B with the
+rough field in place of one power of the propensity.
+
+\subsection{The single-site identities}\label{C:sec:bridge}
+Fix a site \(x\) and write \(\Lambda=\Lambda_\lambda(x)\), \(G=G_h(x)\),
+\(d=d_*(x)\), \(\eta=\eta(x)\), \(M_j=\E\Lambda^j\).  The \emph{shift
+variable} \(\zeta\) is the coded value of the smooth nuisance at the
+site, \(\zeta=y\) in case~(a) and \(\zeta=p\) in case~(b); the unshifted
+\(Q\)-likelihood, as a function of \(\zeta\) for a cell
+\((R,T)\in\{\pm1\}^2\), and the \emph{real field} are
+\begin{equation}
+\begin{array}{c|cc}
+ &L(\zeta)&\real(\zeta)\\ \hline
+ \text{(a)}&(1+R\ja\Lambda)(1+T\zeta)&d\ja\Lambda\,T+d\,RT\\[2pt]
+ \text{(b)}&(1+R\zeta)\bigl(1+T\jb\Lambda(1+\eta-\zeta^2)\bigr)&-2d\zeta\,T+d(1-3\zeta^2)\,RT
+\end{array}
+\label{C:eq:L-real}
+\end{equation}
+\(L\) is a polynomial of degree \(\dg\) in \(\zeta\) and affine in
+\(\Lambda\), \(L=A+B\Lambda\) with \(B\) carrying the factor \(\jfi\).  By
+\eqref{eq:walsh}, \(L(\zeta_0)\) is the \(Q\)-likelihood at the unshifted
+parameter (\(\zeta_0=y_0\), resp.\ \(p_0\)), \(L(\zeta_0+\jsh\Lambda)\) the
+\(Q\)-likelihood at the jittered parameter, and the \(P\)-likelihood is
+\begin{equation}
+ L^P=L(\zeta_0)+\real(\zeta_0):
+ \label{C:eq:LP}
+\end{equation}
+in case~(a), \(y+\tau(1+p)=y_0+d\ja\Lambda\) and \(py+\tau(1+p)=\ja\Lambda y_0+d\);
+in case~(b), \(y+\tau(1+p)=y_\lambda-d(1+3p_0)+d(1+p_0)=y_\lambda-2dp_0\) and
+\(py+\tau(1+p)=p_0y_\lambda-dp_0(1+3p_0)+d(1+p_0)=p_0y_\lambda+d(1-3p_0^2)\).
+Define the \emph{increments}
+\begin{equation}
+ \Delta^{(e)}(\zeta)=\frac{\jsh^e}{e!}\,\partial_\zeta^eL(\zeta),\quad e=1,\dots,\dg,
+ \qquad\text{so that}\qquad
+ L(\zeta+\jsh\Lambda)-L(\zeta)=\sum_{e=1}^{\dg}\Lambda^e\Delta^{(e)}(\zeta),
+ \label{C:eq:increments}
+\end{equation}
+and the \emph{substitution polynomials} in \(\Lambda\), for
+\(e\in\{1,\dots,\dg\}\), \(f\in\{0,\dots,\dg\}\):
+\begin{equation}
+\begin{array}{c|l}
+ \text{(a)}&\K^{(1,0)}(\Lambda)=\Lambda,\qquad \K^{(1,1)}(\Lambda)=\varkappa:=\ja^2G^4
+ \quad(\text{so that }\varkappa\jb=d\ja G^2),\\[2pt]
+ \text{(b)}&\K^{(e,f)}(\Lambda)=M_f\Lambda^e:\quad
+ \K^{(e,0)}=\Lambda^e,\quad \K^{(e,f)}=0\ (f\text{ odd}),\quad \K^{(e,2)}=G^2\Lambda^e .
+\end{array}
+\label{C:eq:K}
+\end{equation}
+In both cases every nonzero \(\K^{(e,f)}\) is a Walsh polynomial all of
+whose monomials have degree \(\equiv e+f\pmod2\) (in case~(a):
+\(\Lambda\) for \((1,0)\), the constant \(\varkappa\) for \((1,1)\)), and
+\(\norm{\K^{(e,f)}}_W\le N_0^{\dg}\).
+
+\begin{lemma}[Bridge with design exponents]\label{C:lem:bridge}
+In either case, for every real \(\zeta\), every cell \((R,T)\), and every
+\(f\in\{0,\dots,\dg\}\),
+\begin{equation}
+ \sum_{e=1}^{\dg}\E_\Lambda\bigl[\K^{(e,f)}(\Lambda)\,\Delta^{(e)}(\zeta)\bigr]
+ =\E_\Lambda\bigl[\Lambda^f\,\real(\zeta)\bigr],
+ \label{C:eq:bridge}
+\end{equation}
+where \(\E_\Lambda\) averages the rough field at the site (the other
+quantities being fixed).  In particular (\(f=0\))
+\(\E_\Lambda L(\zeta+\jsh\Lambda)=\E_\Lambda L(\zeta)+\E_\Lambda\real(\zeta)\).
+\end{lemma}
+
+\begin{proof}
+\emph{Case (a).}  \(\Delta^{(1)}(y)=\jb\partial_yL=\jb T(1+R\ja\Lambda)\).
+For \(f=0\): \(\E[\Lambda\jb T(1+R\ja\Lambda)]=\ja\jb G^2RT=dRT\), and
+\(\E[\real]=\E[d\ja\Lambda T+dRT]=dRT\).  For \(f=1\):
+\(\E[\varkappa\jb T(1+R\ja\Lambda)]=\varkappa\jb T=d\ja G^2T\), and
+\(\E[\Lambda\real]=d\ja G^2T\).
+
+\emph{Case (b).}  Write \(c=T\jb\Lambda\), so that
+\(L(p)=1+c(1+\eta)+Rp+Rpc(1+\eta)-cp^2-Rcp^3\) and
+\[
+ \partial_pL=R+Rc(1+\eta)-2cp-3Rcp^2,\qquad
+ \partial_p^2L=-2c-6Rcp,\qquad
+ \partial_p^3L=-6Rc .
+\]
+With \(\E[\Lambda^jc]=M_{j+1}\jb T\), for every \(j\ge0\):
+\begin{align}
+ \E[\Lambda^j\Delta^{(1)}(p)]&=\ja\bigl[M_jR+M_{j+1}\jb T\{R(1+\eta)-2p-3Rp^2\}\bigr],
+ \label{C:eq:E1}\\
+ \E[\Lambda^j\Delta^{(2)}(p)]&=-\ja^2M_{j+1}\jb T(1+3Rp),
+ \label{C:eq:E2}\\
+ \E[\Lambda^j\Delta^{(3)}(p)]&=-\ja^3M_{j+1}\jb RT .
+ \label{C:eq:E3}
+\end{align}
+For \(f=0\) the left side of \eqref{C:eq:bridge} is
+\(\sum_e\E[\Lambda^e\Delta^{(e)}]\).  By \eqref{C:eq:E1} with \(j=1\)
+(\(M_1=0\), \(M_2=G^2\)): \(\ja\jb G^2T\{R(1+\eta)-2p-3Rp^2\}
+=d\{RT(1+\eta)-2pT-3RTp^2\}\).  By \eqref{C:eq:E2} with \(j=2\): \(M_3=0\),
+so the term vanishes.  By \eqref{C:eq:E3} with \(j=3\):
+\(-\ja^3\mu_4\jb RT=-d\eta RT\) by \eqref{C:eq:eta}.  The sum is
+\(d(1-3p^2)RT-2dpT=\real(p)=\E[\Lambda^0\real(p)]\) (\(\real\) does not
+contain \(\Lambda\)).  For \(f\ge1\), \(\K^{(e,f)}=M_f\Lambda^e\), so the
+left side is \(M_f\) times the left side for \(f=0\), i.e.\
+\(M_f\real(p)=\E[\Lambda^f\real(p)]\).
+\end{proof}
+
+The identity with \(f=0\) is the idea behind the construction: at a
+single site, averaging the rough field, the jittered \(Q\)-likelihood
+equals the \(P\)-likelihood; in case~(a) the \(Q\)-side \(RT\)-cell
+produces \(d\) through \(\E[\ja\Lambda\cdot\jb\Lambda]=\ja\jb G^2\), in case~(b)
+the fourth-moment correction \(\eta\) cancels the cubic term of the
+jitter and the \(P\)-side control outcome absorbs the \(T\)-cell
+\(-2dp_0\), which is legal because \(p_0\) is smooth.  The identities
+with \(f\ge1\) are what the design weights of the carrier require
+(Proposition~\ref{C:prop:matching}, Step~3): when the design density
+carries a factor \(\Lambda^f\) at the site, the jitter \(\Lambda^e\) of
+the site must be replaced by \(\K^{(e,f)}(\Lambda)\), and
+Lemma~\ref{C:lem:bridge} says that this reproduces the design-weighted
+\(P\)-side \(\E[\Lambda^f\real]\) exactly.  In case~(a) the real field
+contains \(\Lambda\) and the correction replaces the jitter by the
+constant \(\varkappa\); in case~(b) it does not, and the correction is a
+rescaling of the jitter by \(\E[\Lambda^f]\).
+
+\section{Case C: legality}\label{C:sec:legal}
+
+\begin{lemma}\label{C:lem:legal}
+For sufficiently small fixed \(c_a,c_b>0\), all sufficiently large \(n\),
+every \(\lambda\), every \(U\) in the legal ball, and every design density
+produced by the carrier, the two actual rows \(P\) and \(Q\) of
+\eqref{C:eq:two-sides-a}, resp.\ \eqref{C:eq:two-sides-b}, define laws in
+\(\cP\), and
+\(\tau_P(x_0)-\tau_Q(x_0)=c_ac_b\Delta\).
+\end{lemma}
+
+\begin{proof}
+\emph{The rough field.}  \(\Lambda_\lambda=G_h\cdot\sum_m\lambda_m
+\phi((\cdot-x_0)/\ell-m)\) is \(G_h\) times a bounded-overlap sum of
+translates of \(\phi(\cdot/\ell)\).  By Lemma~\ref{lem:holder-scaling}
+with \(t=\alpha\wedge\beta\le1\), \(\norm{\Lambda_\lambda}_{C^{\alpha\wedge\beta}}\le C\ell^{-\alpha\wedge\beta}
++Ch^{-\alpha\wedge\beta}\le C\ell^{-\alpha\wedge\beta}\), and \(\abs{\Lambda_\lambda}\le N_0\).
+
+\emph{The carried field.}  \(\cf=\sum_k\psi_kv_Q(\theta_k)^\top U_k\) is a
+bounded-overlap sum of functions smooth at scale \(r\) with bounded
+coefficients, so by Lemma~\ref{lem:holder-scaling} (any \(t>0\))
+\(\norm{\cf}_{C^{\alpha\vee\beta}}\le C_Qr^{-\alpha\vee\beta}\) and \(\abs{\cf}\le C_Q\).
+The carrier draws every \(U_k\) inside the fixed legal ball by
+Proposition~\ref{C:prop:carrier}(iii), and legality of the actual
+parameters involves only \(U_k\).  (The shifted coefficients
+\eqref{C:eq:shift} are never drawn and are not parameters of any law.
+The jittered parameter is used only in the single-site identities and in
+Lemma~\ref{C:lem:walsh-bounds}, where the jitter is the first-order term
+of \eqref{C:eq:shift} alone, of size
+\(\norm{t\sum_im_k(x_i)c_{ki}\Lambda_i}\le C_QN_0t/t_n=C_Q\Lambda^{-B}\to0\) on
+the support of \(\chi_Q\).  The base point there is
+\(U\in\mathbb B_0=\operatorname{supp}\Pi_0\), and \(2\mathbb B_0\) lies
+inside the legal ball, so the fixed margin between \(\mathbb B_0\) and
+the boundary of the legal ball absorbs the shift for large \(n\); the
+statement is not made for arbitrary \(U\) on the boundary of the legal
+ball.  The moment corrections of
+Section~\ref{C:sec:target} are terms of the algebra element
+\(\cJ(\mathbb D)\), controlled through \(\norm{\mathbb D-1^{\otimes Q}}_\cA\),
+and are not shifts of any parameter.)
+
+\emph{Case (a).}  Propensity: \(\norm{p_\lambda}_{C^\alpha}\le Cc_a\) and
+\(\abs{p_\lambda}\le N_0c_a\); choose \(c_a\) so that \(\pi=(1+p_\lambda)/2\)
+lies in \(\cH^\alpha(L_\pi)\) (the constant \(1/2\) is an interior point)
+and \(N_0c_a\le1-2\kappa\).  Outcome, \(Q\) side: \(y_0=b\cf\) has
+\(\norm{y_0}_{C^\beta}\le C_Qbr^{-\beta}=C_Qc_b\), \(\abs{y_0}\le C_Qc_b\).
+Outcome, \(P\) side: \(y_P=y_0-d_*\), and
+\(\norm{d_*}_{C^\beta}\le C\Delta h^{-\beta}=Ch^{\gamma-\beta}\to0\) since
+\(\gamma>A_0\ge\beta\).
+
+\emph{Case (b).}  Propensity: \(\norm{p_0}_{C^\alpha}\le C_Qar^{-\alpha}=C_Qc_a\),
+\(\abs{p_0}\le C_Qc_a\); choose \(c_a\) accordingly.  Outcome, \(Q\)
+side: \(y=\jb\Lambda_\lambda(1+\eta-p_0^2)\); by \eqref{C:eq:eta} and the
+bound on \(p_0\), \(\norm{1+\eta-p_0^2}_\infty\le2\) and
+\(\norm{1+\eta-p_0^2}_{C^\beta}\le C\ja^2\ell^{-\beta}+C_Qc_a^2r^{-\beta}\le C\ell^{-\beta}\),
+so \(\norm y_{C^\beta}\le C_Q\jb\ell^{-\beta}=C_Qc_b\) and \(\abs y\le2N_0c_b\).
+Outcome, \(P\) side: \(y_P=y-d_*(1+3p_0)\), and
+\(\norm{d_*(1+3p_0)}_{C^\beta}\le C\Delta h^{-\beta}+C_Q\Delta ar^{-\beta}
+=Ch^{\gamma-\beta}+C_Qc_a\Delta r^{\alpha-\beta}\to0\), since
+\(\gamma>A_0>\beta\) and \(\alpha>\beta\).
+
+\emph{CATE, ranges, design, separation (both cases).}
+\(\tau_P=d_*=c_ac_b\Delta G_h^2\) has
+\(\norm{\tau_P}_{C^\gamma}\le Cc_ac_b\Delta h^{-\gamma}=Cc_ac_b\);
+\(\tau_Q=0\).  \(\pi=(1+p)/2\), \(\mu_0=(1+y)/2\) and \(\mu_1=\mu_0+\tau\) lie
+in \([\kappa,1-\kappa]\) because \(\abs p\le C_Qc_a\) and
+\(\abs y+\abs\tau\le C_Qc_b+o(1)\), both \(<1-2\kappa\) after choosing
+\(c_a,c_b\).  The
+design density is \(f_H\) of Section~\ref{C:sec:carrier}, which lies in
+\([\underline f,\overline f]\) by \eqref{C:eq:density-bounds}, the only
+requirement that \(\cP\) places on the design.  Finally
+\(\tau_P(x_0)-\tau_Q(x_0)=c_ac_b\Delta G(0)^2=c_ac_b\Delta\).
+\end{proof}
+
+\section{Case C: the carrier with exact design-weighted matching}\label{C:sec:carrier}
+
+Fix an active block \(k\).  The chart \(\theta_k\) identifies \(S_k\) with
+\(\Torus^d\); functions on \(S_k\) become functions on the torus only after
+a cutoff, since a rough packet or the bump \(G_h\) may cross \(\partial S_k\)
+and its restriction to \(S_k\), read periodically, would have a jump there.
+Let \(\chi_0\in C_c^\infty\) on the open chart cube be a fixed cutoff with
+\(0\le\chi_0\le1\), equal
+to one on the fixed subcube containing \(\operatorname{supp}(\phi_k\circ\theta_k^{-1})\)
+(hence on \(\operatorname{supp}m\), with \(m\) as below) and vanishing near
+the boundary of the cube; \(\chi_0\) is the same function for every block.
+In the chart write \(m(u)=m_k(\theta_k^{-1}(u))\) and
+\[
+ \Lambda(u)=\chi_0(u)\,\Lambda_\lambda(\theta_k^{-1}(u)),\qquad
+ \psi_m(u)=\chi_0(u)\,\psi^\flat_m(\theta_k^{-1}(u)),\qquad
+ G(u)=G_h(\theta_k^{-1}(u)),
+\]
+so that \(\Lambda(u)=\sum_{m\in\cJ_k}\lambda_m\psi_m(u)\), where
+\(\cJ_k=\{m:\operatorname{supp}\psi^\flat_m\cap S_k\ne\varnothing\}\) is the set
+of packets \emph{read by block \(k\)}.  Since \(\chi_0=1\) on
+\(\operatorname{supp}m\), \(m\Lambda\) and \(m\psi_m\) are the chart
+expressions of \(m_k\Lambda_\lambda\) and \(m_k\psi^\flat_m\), so the cutoff
+does not change any quantity that carries the multiplier \(m\); it only
+makes the packets smooth on the torus.  Then \(\abs{\cJ_k}\le Ct^{-d}\), at
+most \(N_0\) of the \(\psi_m\) are nonzero at any point, and each
+\(\psi_m\) is a smooth function supported in a cube of side \(\asymp t\)
+with
+\[
+ \norm{\psi_m}_{\cW_d}\le C_\psi,\qquad \norm{\psi_m}_{L^1(\Torus^d)}\le Ct^d :
+\]
+by \eqref{eq:rough}, \(\psi^\flat_m(x)=G_h(x)\phi((x-x^\flat_m)/\ell)\) with
+\(x^\flat_m=x_0+\ell m\), and the chart is affine with \(\ell\mapsto t'\asymp t\),
+so \(\psi_m(u)=b_{k,m,n}((u-u_m)/t')\) with the scaled profile
+\[
+ b_{k,m,n}(v)=\chi_0(u_m+t'v)\,G_h(x^\flat_m+\ell v)\,\phi(v),\qquad
+ u_m=\theta_k(x^\flat_m).
+\]
+This profile is not a fixed function, but the family is supported in
+\(\operatorname{supp}\phi\) and has \(C^{d+1}\) norms bounded uniformly in
+\(k\), \(m\) and \(n\): \(\chi_0\) is fixed and \(t'\le1\), and
+\(\partial_v^\nu\{G_h(x^\flat_m+\ell v)\}=(\ell/h)^{\abs\nu}(\partial^\nu G)((x^\flat_m-x_0+\ell v)/h)\)
+with \(\ell/h\le1\).  The Wiener norm of a dilate
+\(v\mapsto b((u-u_m)/t')\) of a bump \(b\) is bounded by a constant times
+the \(C^{d+1}\) norm of \(b\), uniformly in the dilation, which gives the
+first bound; the second is \(\abs{\psi_m}\le\abs{\phi(\cdot/t')}\) with
+\(0\le\chi_0\le1\) and \(\abs{G_h}\le1\).  \(G\) is not cut off here:
+it enters the algebra only through the products \(\chi_0G^2\), \(\chi_0G^4\)
+of \eqref{C:eq:coef-chart}.  All constants are uniform in \(k\) and in the
+signs.  The likelihood cells are polynomials of degree
+\(\le\dg\) in each site's evaluation of the carried field, so the carrier
+must reproduce moments of degree \(\le\dg\) per site; accordingly the
+algebra, the ideal increment, the polarization and the target below are
+of degree \(\le\dg\) per slot (\(\dg=1\): multilinear).
+
+\subsection{The \texorpdfstring{\(m\)}{m}-adapted algebra of degree \texorpdfstring{\(\dg\)}{d}}
+Let \(X_1,\dots,X_Q\) be commuting formal symbols and let
+\(\{\lambda_m\}_{m\in\cJ_k}\) be a second family of commuting symbols with
+\(\lambda_m^2=1\); monomials are \(\lambda^S=\prod_{m\in S}\lambda_m\),
+\(S\subseteq\cJ_k\), with \(\lambda^S\lambda^{S'}=\lambda^{S\triangle S'}\).
+Put \(\cE=\{0,1,\dots,\dg\}^Q\) and
+\begin{equation}
+ \begin{gathered}
+ N_m:=c_d^{-1}N_0\max\{1,\norm{m}_{\cW_d}\}
+       \le C_dN_0\Lambda^d
+       \qquad(\text{Lemma~\ref{C:lem:multiplier}}),\\
+ \abs{m(u)\Lambda(u)}\le c_d^{-1}N_0\le N_m .
+ \end{gathered}
+ \label{C:eq:Nm}
+\end{equation}
+An element of \(\cA\) (the \emph{\(m\)-adapted representative algebra}) is
+an array \(W=(W_{e,S})\), \(e\in\cE\), \(S\subseteq\cJ_k\), with
+\(W_{e,S}\in\cW_{dQ}\).  Its \emph{realization} as a polynomial in the
+bare symbols \(X_i\), and its norm, are
+\begin{equation}
+ \begin{aligned}
+  \realize(W)(T;X,\lambda)
+   &=\sum_{e\in\cE}\sum_S m^e(T)W_{e,S}(T)X^e\lambda^S,
+   &m^e(T)&:=\prod_i m(u_i)^{e_i},\\
+  \norm W_\cA
+   &=\sum_{e,S}\norm{W_{e,S}}_{\cW_{dQ}}N_m^{\abs e}<\infty,
+   &\abs e&:=\sum_i e_i .
+ \end{aligned}
+ \label{C:eq:A-norm}
+\end{equation}
+Equality and the norm in \(\cA\) are defined on the arrays, not on their
+realizations.  No quotient by the kernel of \(\realize\) is taken.
+In particular, \(\realize\) need not be injective: a nonzero
+representative supported where \(m^e=0\) can have zero realization.
+Thus \(\cA\) is not identified with a subspace of bare-coefficient
+polynomials.  The notation \(m^eW_{e,S}X^e\lambda^S\) below can denote a
+\emph{tagged representative term}; when read as an ordinary polynomial,
+it denotes its realization only.
+
+Addition is coefficientwise.  Multiplication is convolution of the
+representatives, with \(\lambda^S\lambda^{S'}=\lambda^{S\triangle S'}\),
+followed by the projection \(P_\dg\) discarding exponents greater than
+\(\dg\) in any slot.  Thus the product of tagged terms uses
+representative \(W_{e,S}V_{e',S'}\) at \((e+e',S\triangle S')\), before
+projection.  Vector-valued elements carry the sum of the coordinate
+norms.  All polarization identities and the fixed point are formed in
+this representative space.
+
+The \emph{evaluation} is
+\(\ev_\lambda W=\realize(W)(T;\Lambda_\lambda(u_\cdot),\lambda)\).
+The \emph{reflection} is the isometric involution
+\((RW)_{e,S}=(-1)^{\abs e+\abs S}W_{e,S}\), corresponding after realization
+to \(X_i\mapsto-X_i\), \(\lambda_m\mapsto-\lambda_m\).  Hence
+\(\ev_{-\lambda}W=\ev_\lambda(RW)\).  For a symbol \(m\in\cJ_k\), the
+\emph{symbol seminorm} is
+\begin{equation}
+ \norm W_{[m]}=\sum_e\sum_{S\ni m}
+       \norm{W_{e,S}}_{\cW_{dQ}}N_m^{\abs e},
+ \label{C:eq:symbol-seminorm}
+\end{equation}
+the mass of the representative terms containing the explicit symbol
+\(\lambda_m\), as distinct from dependence entering through site values.
+
+\begin{lemma}\label{C:lem:algebra}
+\(\cA\) is a commutative Banach algebra with unit; \(R\) is an isometric
+involution; moreover
+\[
+ \sup_T\norm{\lambda\mapsto\ev_\lambda W(T)}_W\le\norm W_\cA,
+ \qquad \norm{\ev_\lambda W}_\infty\le\norm W_\cA
+ \quad\text{for every }\lambda.
+\]
+Also \(\ev_\lambda(WV)=\ev_\lambda(W)\ev_\lambda(V)\) whenever the
+projection \(P_\dg\) discards no term, i.e.\ whenever every monomial of
+\(WV\) has exponents \(\le\dg\) (this is the case in every product used
+below: the slot factors of an atom power
+\(F^{\otimes Q}=\prod_s(1+\theta t_rg(u_s))\) involve only \(X_s\);
+the ambient expression in \eqref{C:eq:target} also has degree
+\(\le\dg\) per slot, and its representative lift is defined explicitly in
+Section~\ref{C:sec:target}; and the
+polarization coefficients \(a_m(A)\) are \(X\)-free); multiplying by a
+scalar Wiener element \(w(u_i)\) of one slot has norm
+\(\le\norm w_{\cW_d}\); and for every symbol \(m\),
+\[
+ \norm{WV}_{[m]}\le\norm W_{[m]}\norm V_\cA+\norm W_\cA\norm V_{[m]} .
+\]
+Moreover, in the \emph{frozen-field evaluation}
+\(W(\lambda;\xi)=\sum_{e,S}m^e(T)W_{e,S}(T)\xi^e\lambda^S\), in which the site
+symbols \(X_i\) are replaced by fixed numbers \(\xi_i\) with
+\(\abs{m(u_i)\xi_i}\le N_m\) (for instance \(\xi_i=\Lambda_{\lambda_0}(u_i)\) for
+a fixed sign vector \(\lambda_0\)), the Walsh monomials containing
+\(\lambda_m\) have total mass \(\le\norm W_{[m]}\) uniformly in \(T\), so
+that \(\sup_T\abs{W(\lambda;\xi)-W(\lambda^{(m)};\xi)}\le2\norm W_{[m]}\),
+where \(\lambda^{(m)}\) is \(\lambda\) with the sign of \(\lambda_m\) reversed.
+The full evaluation \(\ev_\lambda W=W(\lambda;\Lambda_\lambda(u_\cdot))\)
+depends on \(\lambda_m\) in addition through the site values
+\(\Lambda_\lambda(u_i)\) with \(m\in J(u_i)\); this dependence is not
+controlled by the seminorm and is treated separately where it matters
+(Lemma~\ref{C:lem:weights}).
+\end{lemma}
+\begin{proof}
+Let \(\cA^{\rm full}\) be the same construction with \(e\in\mathbb N^Q\)
+(and \(m^e=\prod m(u_i)^{e_i}\)); it is a commutative Banach algebra with
+unit by submultiplicativity of \(\cW_{dQ}\), \(N_m^{\abs{e'}}N_m^{\abs{e''}}=N_m^{\abs{e'+e''}}\),
+\(\norm{\lambda^S\lambda^{S'}}=1\), and completeness of weighted
+\(\ell^1\)-sums.  \(\norm{P_\dg}\le1\).  The product on \(\cA\) is
+\(W\cdot V=P_\dg(WV)\); it is commutative, bilinear, submultiplicative, and
+associative because exponents add: a monomial of \(WVU\) exceeds degree
+\(\dg\) in a slot iff one of the partial products already does or the
+total does, so \(P_\dg(P_\dg(WV)U)=P_\dg(WVU)=P_\dg(WP_\dg(VU))\).
+For the Walsh-norm evaluation bound, at each fixed tuple \(T\),
+\(\norm{\Lambda_\lambda(u_i)}_W\le N_0\).  The Walsh algebra inequality
+therefore gives
+\[
+ \norm{\ev_\lambda W(T)}_W
+ \le\sum_{e,S}\abs{W_{e,S}(T)}(c_d^{-1}N_0)^{\abs e}
+ \le\norm W_\cA .
+\]
+For the pointwise bound, \(\norm{W_{e,S}}_\infty\le\norm{W_{e,S}}_{\cW}\),
+\(\abs{m^e\prod\Lambda(u_i)^{e_i}}\le(c_d^{-1}N_0)^{\abs e}\le N_m^{\abs e}\), \(\abs{\lambda^S}=1\);
+\(\ev_\lambda\) is multiplicative on \(\cA^{\rm full}\) (substitution of
+commuting values into absolutely convergent series), hence on \(\cA\)
+whenever \(P_\dg(WV)=WV\).
+A product monomial contains \(\lambda_m\) only if at least one factor does
+(\(\lambda_m^2=1\) can only remove it), which gives the seminorm
+inequality.  In \(W(\lambda;\xi)\) the monomials containing \(\lambda_m\) are
+those with \(m\in S\), of total mass
+\(\le\sum_e\sum_{S\ni m}\norm{W_{e,S}}_\infty N_m^{\abs e}\le\norm W_{[m]}\), and
+reversing \(\lambda_m\) changes exactly their sign.
+\end{proof}
+
+An element is \emph{symmetric} if invariant under simultaneous
+permutation of tensor slots and of the indices of \(e\).
+
+\paragraph{Coefficient extraction on representatives.}
+For \(S'\subseteq[Q]\) and \(f\in\{0,\dots,\dg\}^{S'}\), let
+\(\widehat f\) be its extension by zero to \([Q]\).  Define the specific
+representative lift \(W^{(f;S')}\) by
+\[
+ \bigl(W^{(f;S')}\bigr)_{a,S}
+ =\begin{cases}
+   m^{\widehat f}(T)W_{a+\widehat f,S}(T),&a|_{S'}=0,\\
+   0,&\text{otherwise}.
+  \end{cases}
+\]
+This is a linear operation on the given array and involves no division
+by \(m\).  Its realization is the bare \(X_{S'}^f\)-coefficient of
+\(\realize(W)\):
+\begin{equation}
+ \begin{gathered}
+  \realize(W)=\sum_{f\in\{0,\dots,\dg\}^{S'}}
+       X_{S'}^f\,\realize\bigl(W^{(f;S')}\bigr),
+  \qquad X_{S'}^f=\prod_{i\in S'}X_i^{f_i},\\
+  W^{(f;S')}\text{ has zero site degree on }S',
+  \qquad \norm{W^{(f;S')}}_\cA\le\norm W_\cA .
+ \end{gathered}
+ \label{C:eq:decomp}
+\end{equation}
+Indeed, multiplication of the representative by \(m^{\widehat f}\)
+costs at most \(\norm m_{\cW_d}^{\abs f}\le N_m^{\abs f}\), exactly
+compensated by removing \(\abs f\) from its weight.  The same argument
+gives \(\norm{W^{(f;S')}}_{[m]}\le\norm W_{[m]}\).
+If \(RW=W\), then \(RW^{(f;S')}=(-1)^{\abs f}W^{(f;S')}\).
+The ordinary coefficients of \(\realize(W)\) are unique, but their
+representative lifts here are the ones just specified; no uniqueness of
+an arbitrary lift, or of an expansion after rough-field evaluation, is
+asserted.
+
+\paragraph{Ambient module and bare symbols.}
+Let \(\cA^{\rm amb}\) be the space of bare-coefficient polynomials
+\(\sum_{e,S}V_{e,S}(T)X^e\lambda^S\), \(e\in\cE\), with norm
+\(\sum_{e,S}\norm{V_{e,S}}_{\cW_{dQ}}(c_d^{-1}N_0)^{\abs e}\).
+The realization map is bounded:
+\[
+ \norm{\realize(W)}_{\cA^{\rm amb}}\le\norm W_\cA,
+ \qquad
+ \ev_\lambda\realize(W)=\ev_\lambda W.
+\]
+Bare powers \(X_i\), the substitution polynomials
+\(\K_i^{(e,f)}\), and coefficient vectors such as
+\(J^{(e)}/X^e:=[X^e]\realize(J^{(e)})\) are interpreted in this ambient
+module.  Products used below never exceed the allowed degree.
+An ambient identity is not used to infer an identity in \(\cA\).
+Instead, the target in Section~\ref{C:sec:target} is assigned an explicit
+representative array, with surplus nonnegative powers of \(m\) absorbed
+in its representatives.  This array is the object to which
+polarization, the norm estimates, and the fixed-point theorem apply.
+
+\subsection{The ideal increment}
+Let \(\Psi=\Psi_{\dg Q}(U)\) list the nonconstant monomials of degree
+\(\le\dg Q\) in \(U\in\R^M\), \(N=N_{\dg Q}\) its length.  For a tuple
+\(T\) and \(0\ne e\in\cE\) define
+\begin{equation}
+ J^{(e)}(T)=\chi_Q(T)\,t^{\abs e}\prod_i\frac{m(u_i)^{e_i}}{e_i!}\;
+ \E_{\Pi_0}\Bigl[\prod_i\bigl(c_i(T)\cdot\nabla_U\bigr)^{e_i}\Psi(U)\Bigr]\ X^e,
+ \label{C:eq:ideal}
+\end{equation}
+extended by zero across the diagonals, and \(J=\sum_{e\ne0}J^{(e)}\in\cA^N\).
+\(J\) is symmetric, \(RJ^{(e)}=(-1)^{\abs e}J^{(e)}\), and contains no
+Walsh symbols.  By Taylor's formula for the polynomial \(\Psi\),
+\(\Psi(U+w)=\sum_{e\in\mathbb N^Q}\prod_i(w_i\cdot\nabla)^{e_i}\Psi(U)/e_i!\)
+for \(w=\sum_iw_i\) (the operators commute), so
+\(\sum_{e\in\cE\setminus0}J^{(e)}\) is the part of degree \(\le\dg\) per
+site of \(\chi_Q\{\E_{\Pi_0}\Psi(U+t\sum_im(u_i)X_ic_i)-\E_{\Pi_0}\Psi(U)\}\),
+the moment increment of the virtual shift \eqref{C:eq:shift}.  For \(\dg=1\)
+it is the multilinear part.
+
+\begin{lemma}[Cells see only degree \(\dg\) per slot]\label{C:lem:cells}
+For \(n\in\cE\) let \(\ell_{n,T}\) be the linear functional on \(\R^N\)
+with \(\ell_{n,T}(\Psi(U))=\prod_i(v_Q(u_i)^\top U)^{n_i}\) (\(\ell_{0,T}=0\)).
+Then
+\[
+ \ell_{n,T}\bigl(\ev_\lambda J(T)\bigr)
+ =\chi_Q\Bigl\{\E_{\Pi_0}\prod_i\bigl(v_Q(u_i)^\top U+tm(u_i)\Lambda(u_i)\bigr)^{n_i}
+ -\E_{\Pi_0}\prod_i(v_Q(u_i)^\top U)^{n_i}\Bigr\},
+\]
+and \(\ell_{n,T}(\ev_\lambda J^{(e)})=\chi_Q\prod_i\binom{n_i}{e_i}(tm(u_i)\Lambda(u_i))^{e_i}
+\,\E_{\Pi_0}\prod_i(v_Q(u_i)^\top U)^{n_i-e_i}\), zero unless \(e\le n\)
+coordinatewise.
+\end{lemma}
+\begin{proof}
+\(v_Q(u_i)^\top c_j=\one\{i=j\}\) gives
+\(\prod_i(v_Q(u_i)^\top(U+t\sum_jm(u_j)c_j\Lambda(u_j)))^{n_i}
+=\prod_i(v_Q(u_i)^\top U+tm(u_i)\Lambda(u_i))^{n_i}\), a polynomial of
+degree \(n_i\le\dg\) in each \(\Lambda(u_i)\); so the terms of the Taylor
+expansion with some exponent \(>\dg\) lie in \(\ker\ell_{n,T}\), and the
+\(e\)-th term is the binomial expansion.
+\end{proof}
+
+\begin{lemma}[Wiener estimate]\label{C:lem:wiener}
+\(J^{(e)}\in\cA^N\) with representatives free of the factors \(m(u_i)\),
+and
+\[
+ \norm{J^{(e)}}_\cA\le C_Q\Lambda^{E_Q}N_m^{\abs e}(t/t_n)^{\abs e};
+\]
+hence, with
+\begin{equation}
+ B>E_Q+\dg dQ+1,\qquad
+ \norm{J}_\cA\le C_Q\Lambda^{E_Q+\dg dQ-B}=:\delta_n\le C_Q\Lambda^{-1}\to0 .
+ \label{C:eq:wiener}
+\end{equation}
+\end{lemma}
+\begin{proof}
+Each coordinate of \eqref{C:eq:ideal} is \(m^{e}(T)\) times a constant times
+\(\chi_Qt^{\abs e}\) times a product of \(\abs e\le\dg Q\) Lagrange coordinates
+(with repetitions: \(e_i\) coordinates of \(c_i\)) times \(X^e\), so the
+representative is the latter.  Insert the shell partition
+\(\sum_{\bm m}\rho_{\bm m}=1\); by Corollary~\ref{cor:configuration-multipliers}
+(repetitions of Lagrange coordinates allowed) and
+Lemma~\ref{lem:admissible-shells}, each of the
+\(\le C_Q\{1+\log(1/t_n)\}^{E_Q}\) shells meeting the taper contributes
+\(\le C_Q(t/t_n)^{\abs e}\) to the \(\cW_{dQ}\) norm.  Sum over
+shells, coordinates, and \(e\), multiply by the weight
+\(N_m^{\abs e}\le C_Q\Lambda^{d\abs e}\), and use \(t/t_n=\Lambda^{-B}\),
+\(\log(1/t_n)=O(\Lambda)\), \(\abs e\le\dg Q\).
+\end{proof}
+
+\subsection{One-slot algebra, centring, polarization}
+Let \(\cB=\cB_k\) be the \emph{one-slot algebra}: the construction
+\eqref{C:eq:A-norm} with \(Q=1\), i.e.\ elements
+\[
+ g=\sum_{e\le\dg}\sum_{S}m(u)^eg_{e,S}(u)X^e\lambda^S,\qquad g_{e,S}\in\cW_d,\qquad
+ \norm g_\cB=\sum_{e,S}\norm{g_{e,S}}_{\cW_d}N_m^e ,
+\]
+with the truncated product, evaluation, and reflection.  For \(g\in\cB\) and a slot \(s\in[Q]\), \(g(u_s)\) denotes the
+element of \(\cA\) obtained by placing \(g\) in slot \(s\) (with
+\(X\mapsto X_s\)) and \(1\) in the other slots; \(\norm{g(u_s)}_\cA=\norm g_\cB\).
+For \(g_1,\dots,g_Q\in\cB\), \(\bigotimes_sg_s:=\prod_sg_s(u_s)\in\cA\), formed
+without truncation since the slots are distinct, and
+\(g^{\otimes Q}=\bigotimes_sg\).
+
+Let \(\{w_\nu\}\) be the real trigonometric basis of \(L^2(\Torus^d)\):
+\(w_0=1\), \(\norm{w_\nu}_\infty\le1\), \(\int w_\nu=0\) for \(\nu\ne0\);
+\(\norm\cdot_{\cW_{dQ}}\) is (up to a constant) the \(\ell^1\) norm of the
+coefficients in \(\{w_{\nu_1}\otimes\cdots\otimes w_{\nu_Q}\}\).  Expanding
+every representative \(W_{e,S}\) in this basis, every \(W\in\cA\) is an
+absolutely convergent sum of \emph{basis tensors}
+\(\lambda^S\bigotimes_ig_i\) with the \emph{\(m\)-adapted slot functions}
+\[
+ g_i=m(u)^{e_i}w_{\nu_i}(u)X^{e_i}\in\cB,\qquad e_i\in\{0,\dots,\dg\},
+\]
+with weight \(N_m^{\abs e}\), and \(\sum(\text{coefficient}\times\text{weight})\le C\norm W_\cA\).
+The multiplier \(m\) is kept inside the slot function and is never
+expanded into Fourier modes; this is what makes the atoms below
+\(m\)-adapted.  For \(e_i\ge1\) the evaluated slot function
+\(m^{e_i}w_{\nu_i}\Lambda^{e_i}\) is not mean zero; its mean is the Walsh
+polynomial
+\begin{equation}
+ \overline g_i=\int_{\Torus^d}m(u)^{e_i}w_{\nu_i}(u)\Lambda(u)^{e_i}\,du
+ =\sum_{S:\abs S\le e_i}\lambda^S\,\overline g_{i,S},
+ \label{C:eq:centring}
+\end{equation}
+an element of \(\cB\) (free of \(X\): \(e=0\), constant in \(u\)), regarded
+as an element of \(\cA\) through the slot embedding.  Expanding
+\(\Lambda^{e_i}\) into products of packets and using \(\abs m\le c_d^{-1}\):
+\(\norm{\overline g_i}_W\le\int c_d^{-e_i}(\sum_m\abs{\psi_m})^{e_i}\le(c_d^{-1}N_0)^{e_i}\le N_m^{e_i}\),
+and for every symbol \(m'\),
+\(\norm{\overline g_i}_{[m']}\le e_ic_d^{-e_i}N_0^{e_i-1}\int\abs{\psi_{m'}}\le Ct^d\).
+Put \(g^\circ_i=(g_i-\overline g_i)/(2N_m^{e_i})\) for \(e_i\ge1\) and
+\(g^\circ_i=g_i/2\) for \(e_i=0\), \(\nu_i\ne0\); then
+\(\norm{g^\circ_i}_\cB\le1\), \(\norm{\ev_\lambda g^\circ_i}_\infty\le1\)
+(by \eqref{C:eq:Nm}), \(\int\ev_\lambda g^\circ_i\,du=0\) for every
+\(\lambda\), \(\norm{g^\circ_i}_{[m']}\le Ct^d\), and
+\(Rg^\circ_i=(-1)^{e_i}g^\circ_i\).
+
+\begin{lemma}[Polarization]\label{C:lem:pol}
+Fix \(\eta_f\in(0,1)\), \(\theta=\eta_f/(2\max_r\abs{t_r})\), and a
+finite-dimensional normed space \(V\).  There is a countable family of
+one-slot atoms \(F_m=1+\theta t_{r(m)}\overline g_m\in\cB\), closed under
+\(R\), with \(\norm{\overline g_m}_\cB\le1\), \(\norm{\ev_\lambda\overline g_m}_\infty\le1\),
+\(\int\ev_\lambda\overline g_m=0\) for all \(\lambda\), and linear maps
+\(a_m:\cA^{\rm sym}\otimes V\to\cA^{\rm sc}\otimes V\) (\(\cA^{\rm sc}\): Walsh
+polynomials with constant coefficients) such that every symmetric
+\(A\in\cA\otimes V\) satisfies \(A=\sum_ma_m(A)F_m^{\otimes Q}\) absolutely in
+\(\cA\), and
+\begin{equation}
+ \sum_m\norm{a_m(A)}\le C_{\rm pol}\norm A,\qquad
+ \sum_m\bigl|\norm{a_m(A)}-\norm{a_m(A')}\bigr|\le C_{\rm pol}\norm{A-A'} .
+ \label{C:eq:pol-bounds}
+\end{equation}
+Each \(\ev_\lambda F_m\) is a probability density on \(\Torus^d\) with
+values in \([1-\eta_f/2,1+\eta_f/2]\), and
+\(\norm{F_m^{\otimes Q}-1^{\otimes Q}}_\cA\le(1+\eta_f/2)^Q-1=:C_F\).
+\end{lemma}
+\begin{proof}
+Treat one basis tensor \(\lambda^S\bigotimes_ig_i\); keep \(\lambda^S\) in
+the coefficient.  Multilinearity of the tensor product gives
+\(\bigotimes_ig_i=\sum_{I\subseteq[Q]}\prod_{i\notin I}\overline g_i\prod_{i\in I}2N_m^{e_i}
+\bigotimes_{i\in I}g^\circ_i\otimes\bigotimes_{i\notin I}1\) (with
+\(\overline g_i=0\) for \(e_i=0\), \(\nu_i\ne0\), and the slot \(w_0=1\)
+treated as the unit), \(2^Q\) terms whose coefficients are Walsh
+polynomials of norm \(\le2^Q\prod_iN_m^{e_i}\), i.e.\ \(\le2^Q\) times the
+weight of the basis tensor.  Symmetrise, and apply
+Lemma~\ref{lem:polarization-identity} in the commutative algebra \(\cB\) with the
+symmetrised tensor product on \(\cA\): it expresses
+\(g^\circ_{i_1}\odot\cdots\odot g^\circ_{i_j}\odot1^{\odot(Q-j)}\) through the
+tensor powers \((1+\theta t_rg_\epsilon)^{\otimes Q}=\prod_s(1+\theta t_rg_\epsilon(u_s))\),
+\(g_\epsilon=j^{-1}\sum_{i\in I}\epsilon_ig^\circ_i\in\cB\); only sums within
+\(\cB\) and products across distinct slots occur, so no truncation is
+active and the identity holds in \(\cA\).  The atoms \(1+\theta t_rg_\epsilon\)
+are sums of \(m\)-adapted slot functions, hence in \(\cB\) and of degree
+\(\le\dg\) in \(X\), and satisfy the three bounds; the coefficients are
+\(C_j\theta^{-j}\lambda_{jr}\prod\epsilon_i\) times the Walsh-polynomial
+coefficient above.  Since \(Rg^\circ_i=\pm g^\circ_i\), \(Rg_\epsilon=g_{\epsilon'}\)
+for \(\epsilon'_i=(-1)^{e_i}\epsilon_i\), so the family is \(R\)-closed.
+Summing over the expansion of \(A\) gives \eqref{C:eq:pol-bounds};
+linearity of \(a_m\) holds because the centring elements are attached to
+the basis element, not to \(A\).  The density statement follows from
+\(\abs{\theta t_r\ev_\lambda g_\epsilon}\le\eta_f/2\) and \(\int\ev_\lambda g^\circ_i=0\).
+\end{proof}
+
+\subsection{The coefficient function in the chart}
+With the cutoff \(\chi_0\) fixed at the start of this section, put
+\begin{equation}
+ \text{(a)}\quad \varkappa_k(u)=\chi_0(u)\,\ja^2G(u)^4,\qquad\qquad
+ \text{(b)}\quad G_k^2(u)=\chi_0(u)\,G(u)^2 .
+ \label{C:eq:coef-chart}
+\end{equation}
+\begin{lemma}\label{C:lem:coef-wiener}
+\(\norm{\varkappa_k}_{\cW_d}\le C\ja^2\le1\) and \(\norm{G_k^2}_{\cW_d}\le C\),
+uniformly in \(k\) and \(n\).
+\end{lemma}
+\begin{proof}
+\(G=G_h\circ\theta_k^{-1}\) has all derivatives bounded (it varies at scale
+\(h/r\ge1\) in the chart), so \(\chi_0G^2\) and \(\chi_0G^4\) are smooth
+functions on \(\Torus^d\) with bounded \(C^{d+1}\) norm, hence bounded
+Wiener norm.
+\end{proof}
+Since \(\chi_0=1\) on \(\operatorname{supp}m\), multiplying a coefficient
+that carries \(m(u_i)\) by \(\varkappa_k(u_i)\) or \(G_k^2(u_i)\) is the same as
+multiplying by \(\varkappa\) or \(G^2\) at the site.
+
+\subsection{Substitution operators and the target}\label{C:sec:target}
+In the chart, the substitution polynomials \eqref{C:eq:K} at slot \(i\)
+read
+\begin{equation}
+\begin{array}{c|l}
+ \text{(a)}&\K_i^{(1,0)}=X_i,\qquad \K_i^{(1,1)}=\varkappa_k(u_i),\\[2pt]
+ \text{(b)}&\K_i^{(e,0)}=X_i^{e},\qquad \K_i^{(e,f)}=0\ (f\text{ odd}),\qquad \K_i^{(e,2)}=G_k^2(u_i)X_i^{e},
+\end{array}
+\label{C:eq:subst}
+\end{equation}
+In both cases \(\K_i^{(e,f)}=\varkappa^{(e,f)}(u_i)X_i^{e'(e,f)}\) with
+\(e'(e,f)\in\{0,e\}\) and \(\norm{\varkappa^{(e,f)}}_{\cW_d}\le C\)
+(Lemma~\ref{C:lem:coef-wiener}).
+For \(0\ne e\in\cE\) with \(S'=\operatorname{supp}e\) define the linear
+map \(\cS_e:\cA\to\cA^{\rm amb}\) using the prescribed extraction
+\eqref{C:eq:decomp}:
+\begin{equation}
+ \cS_e(W)=\sum_{f\in\{0,\dots,\dg\}^{S'}}
+ \realize\bigl(W^{(f;S')}\bigr)\prod_{i\in S'}\K_i^{(e_i,f_i)} .
+ \label{C:eq:S-op}
+\end{equation}
+In words: in the \(X_{S'}\)-expansion of \(W\), the monomial \(X_{S'}^f\)
+is replaced by \(\prod_i\K_i^{(e_i,f_i)}\); for \(f_i=0\) this inserts the
+jitter \(X_i^{e_i}\), and for \(f_i\ge1\) the corrected jitter of
+\eqref{C:eq:K}.  The \emph{target} is the representative-valued linear map described by
+\begin{equation}
+ \cJ(\mathbb D)=\sum_{0\ne e\in\cE}\cJ^{(e)}(\mathbb D),\qquad
+ \realize\bigl(\cJ^{(e)}(\mathbb D)\bigr)
+   =\frac{J^{(e)}}{X^e}\,\cS_e(\mathbb D),
+ \label{C:eq:target}
+\end{equation}
+where \(J^{(e)}/X^e=[X^e]\realize(J^{(e)})\) is the \(X\)-free vector
+coefficient in \eqref{C:eq:ideal}.  The second equality describes only
+the realization; the following formula \emph{defines} its lift.
+Let \(B_e(T)\) denote the sole vector representative of \(J^{(e)}\), so
+\(\realize(J^{(e)})=m^eB_eX^e\).  For an input representative
+\(\mathbb D_{a,S}\), put \(S'=\supp e\), \(f=a|_{S'}\), and
+\[
+ g_i=\begin{cases}e'(e_i,f_i),&i\in S',\\a_i,&i\notin S'.\end{cases}
+\]
+If any substitution factor is zero, its contribution is zero.
+Otherwise add to the \((g,S)\)-representative of
+\(\cJ^{(e)}(\mathbb D)\) the vector
+\[
+ \left\{\prod_{i\in S'}
+ m(u_i)^{e_i+f_i-g_i}\varkappa^{(e_i,f_i)}(u_i)\right\}
+ B_e(T)\,\mathbb D_{a,S}(T).
+\]
+Sum these contributions over \((a,S)\).  Every exponent
+\(e_i+f_i-g_i\) is nonnegative, because \(g_i\in\{0,e_i\}\), and
+\(g\in\cE\).  Thus this defines the representative without division by
+\(m\) or an inverse of \(\realize\), even on the zero set of \(m\).
+Realizing the formula gives precisely \eqref{C:eq:target}.
+
+In case~(a), \(e=\one_{S'}\); in the ambient notation the formula reads
+\[
+ \realize\bigl(\cJ^{(S')}(\mathbb D)\bigr)
+ =\frac{J^{(S')}}{X_{S'}}
+   \sum_{A\subseteq S'}\realize\bigl(\mathbb D^{(A;S')}\bigr)
+       \prod_{i\in A}\varkappa_i\prod_{i\in S'\setminus A}X_i.
+\]
+The term \(A=\varnothing\) is the jitter weighted by the extracted
+zero-degree design coefficient.  The remaining terms are the
+\emph{moment corrections} in which the site field is replaced by
+\(\varkappa_i\) together with its prescribed design coefficient.
+
+\begin{lemma}\label{C:lem:target}
+For symmetric \(R\)-invariant \(\mathbb D\in\cA\): \(\cJ(\mathbb D)\in\cA^N\)
+is symmetric, linear in \(\mathbb D\), satisfies
+\(R\cJ^{(e)}(\mathbb D)=(-1)^{\abs e}\cJ^{(e)}(\mathbb D)\), and
+\begin{equation}
+ \norm{\cJ(\mathbb D)}_\cA\le C_Q\delta_n\norm{\mathbb D}_\cA,\qquad
+ \norm{\cJ(\mathbb D)-\cJ(\mathbb D')}_\cA\le C_Q\delta_n\norm{\mathbb D-\mathbb D'}_\cA .
+ \label{C:eq:target-norm}
+\end{equation}
+\end{lemma}
+\begin{proof}
+\emph{Membership and norm.}  Use the representative rule preceding the
+lemma.  For one input \((a,S)\), the output degree is \(g\in\cE\);
+on \(S'\) its surplus power is \(e_i+f_i-g_i\ge0\), and outside
+\(S'\) the original degree \(a_i\) is unchanged.  The Wiener algebra
+inequality and Lemma~\ref{C:lem:coef-wiener} give
+\[
+ \begin{aligned}
+ &N_m^{\abs g}
+ \left\|\left\{\prod_{i\in S'}
+ m(u_i)^{e_i+f_i-g_i}\varkappa^{(e_i,f_i)}(u_i)\right\}
+ B_e\mathbb D_{a,S}\right\|_{\cW_{dQ}}\\
+ &\hspace{12mm}\le
+ C_QN_m^{\abs e+\abs a}\norm{B_e}_{\cW_{dQ}}
+                            \norm{\mathbb D_{a,S}}_{\cW_{dQ}} .
+ \end{aligned}
+\]
+Here \(\norm m_{\cW_d}\le N_m\) and
+\(\abs g+\sum_{i\in S'}(e_i+f_i-g_i)=\abs e+\abs a\).
+Since \(N_m^{\abs e}\norm{B_e}=\norm{J^{(e)}}_\cA\), summing first over
+\((a,S)\), then over \(e\ne0\) and vector coordinates, gives
+\eqref{C:eq:target-norm} by \eqref{C:eq:wiener}.  The representative
+formula is linear, so the difference estimate follows identically.
+
+\emph{Symmetry and parity.}  The rule for \(g\) and for the surplus powers
+commutes with simultaneous permutations of slots and the increment
+pattern; summing over \(e\) proves symmetry.  If \(\mathbb D\) is
+\(R\)-invariant, each nonzero representative has
+\(\abs a+\abs S\) even.  For every nonzero substitution,
+\(g_i\equiv e_i+f_i\pmod2\) on \(S'\).  Thus the output representative
+satisfies
+\[
+ \abs g+\abs S\equiv\abs a+\abs S+\abs e
+       \equiv\abs e\pmod2.
+\]
+This proves \(R\cJ^{(e)}(\mathbb D)=(-1)^{\abs e}\cJ^{(e)}(\mathbb D)\)
+\emph{in the representative space}, not merely after realization.
+\end{proof}
+
+\begin{proposition}[Carrier]\label{C:prop:carrier}
+For every active block \(k\) and all large \(n\) there is a symmetric,
+\(R\)-invariant \(\mathbb D=\mathbb D_k\in\cA\) with
+\(\norm{\mathbb D-1^{\otimes Q}}_\cA\le C_0\delta_n\), and for every sign
+vector \(\lambda\) laws \(\nu_{P,k}(\cdot\mid\lambda)\), \(\nu_{Q,k}(\cdot\mid\lambda)\)
+of a pair \((H_k,U_k)\) such that:
+\begin{enumerate}[label=(\roman*),leftmargin=*]
+\item the law of \(H_k\) is the same under both and does not depend on
+\(\lambda\);
+\item each label \(H\) carries a density \(F_{H}(\cdot;\lambda)=\ev_\lambda F\) on
+\(\Torus^d\), \(F\in\cB\), with \(\int F_H=1\), \(1-\eta_f\le F_H\le1+\eta_f\), and
+\(D(T;\lambda):=\E F_{H_k}^{\otimes Q}(T;\lambda)=\ev_\lambda\mathbb D(T)\), which
+is even in \(\lambda\);
+\item under both laws \(U_k\) is supported on the fixed finite support of
+\(\Pi_0\); under \(\nu_{P,k}\), \(U_k\sim\Pi_0\) independently of \(H_k\);
+\item pointwise on \((\Torus^d)^Q\),
+\begin{equation}
+ \E_{\nu_{Q,k}}\bigl[F_{H_k}^{\otimes Q}(T)\Psi(U_k)\bigr]
+ -\E_{\nu_{P,k}}\bigl[F_{H_k}^{\otimes Q}(T)\Psi(U_k)\bigr]
+ =\ev_\lambda\cJ(\mathbb D)(T).
+ \label{C:eq:master}
+\end{equation}
+\end{enumerate}
+The kernels depend on \(\lambda\) only through \((\lambda_m)_{m\in\cJ_k}\)
+and are measurable: the label set is countable, and for each fixed label
+the kernel depends on finitely many signs and takes finitely many
+values.  Moreover
+\(\mathbb D\in\cA\), so for \(1\le e\le\dg\) the realized coefficient
+of \(X_i^e\) carries \(m(u_i)^e\) and vanishes where \(m(u_i)=0\); and
+\begin{equation}
+ \norm{\mathbb D}_{[m]}\le C_Q\delta_nt^d\qquad\text{for every symbol }m\in\cJ_k ,
+ \label{C:eq:D-symbol}
+\end{equation}
+so that, in the frozen-field evaluation of Lemma~\ref{C:lem:algebra},
+the Walsh monomials of \(\mathbb D\) containing a given symbol
+\(\lambda_m\) have total mass \(\le C_Q\delta_nt^d\) uniformly on
+\((\Torus^d)^Q\).  (The dependence of \(\ev_\lambda\mathbb D\) on
+\(\lambda_m\) through the site values \(\Lambda_\lambda(u_i)\) is a separate
+matter, handled in Lemma~\ref{C:lem:weights}.)
+\end{proposition}
+
+\begin{proof}
+For symmetric \(R\)-invariant \(\mathbb D\) put
+\(A=\cJ(\mathbb D)\), decompose \(A=\sum_ma_m(A)F_m^{\otimes Q}\) and
+\(RA=\sum_ma_m(RA)F_m^{\otimes Q}\) (Lemma~\ref{C:lem:pol}); applying \(R\)
+to the second, \(A=R(RA)=\sum_m\bigl(Ra_m(RA)\bigr)(RF_m)^{\otimes Q}\).  Set
+\[
+ \omega_m=K_0\bigl(\norm{a_m(A)}+\norm{a_m(RA)}\bigr),\qquad K_0>4/\delta_Q,
+\]
+\[
+ \Phi(\mathbb D)=\Bigl(1-\sum_m\omega_m\Bigr)1^{\otimes Q}
+ +\sum_m\omega_m\,\tfrac12\bigl\{F_m^{\otimes Q}+(RF_m)^{\otimes Q}\bigr\}.
+\]
+\(\Phi(\mathbb D)\) is symmetric and \(R\)-invariant.  By
+\eqref{C:eq:pol-bounds} and \eqref{C:eq:target-norm},
+\(\norm{\Phi(\mathbb D)-\Phi(\mathbb D')}\le C_0\delta_n\norm{\mathbb D-\mathbb D'}\)
+with \(C_0=2K_0C_FC_{\rm pol}C_Q\), and \(\sum_m\omega_m\le C_1\norm{\mathbb D}\delta_n\),
+which is \(\le1\) for large \(n\) on the ball below (\(\delta_n\to0\)), so
+that the label \(0\) introduced below has nonnegative probability.
+For large \(n\), \(\Phi\) maps the ball \(\norm{\mathbb D-1}\le2C_0\delta_n\) into
+itself with contraction constant \(\le1/2\); let \(\mathbb D\) be its fixed
+point.
+
+Labels: for each \(m\) with \(\omega_m>0\) (labels with \(\omega_m=0\) are
+omitted), \(m^+\) with density \(F_m\) and \(m^-\) with density \(RF_m\),
+each of probability \(\omega_m/2\), and a label \(0\) with density \(1\);
+the \(\omega_m\) are \(\lambda\)-free.  This gives (i), (ii) (using
+Lemma~\ref{C:lem:pol}, \(\ev_{-\lambda}F_m=\ev_\lambda RF_m\), and
+\(\E F_H^{\otimes Q}=\ev_\lambda\Phi(\mathbb D)=\ev_\lambda\mathbb D\), even in
+\(\lambda\) by \(R\)-invariance).  Tilts: under \(Q\) and label \(m^\pm\),
+\(U_k\sim\Pi_{v^\pm_m(\lambda)}\) with
+\(v^+_m(\lambda)=\ev_\lambda a_m(A)/\omega_m\), \(v^-_m(\lambda)=\ev_\lambda Ra_m(RA)/\omega_m\),
+so \(\norm{v^\pm_m(\lambda)}\le K_0^{-1}<\delta_Q\) (the evaluation of a Walsh
+polynomial is bounded by its norm) and Lemma~\ref{lem:moment-simplex}
+applies (with \(\Psi\) embedded in \(\Psi_{4Q}\)); under \(P\), \(U_k\sim\Pi_0\).  Then
+\[
+ \begin{aligned}
+ \E_{\nu_Q}[F^{\otimes Q}\Psi]-\E_{\nu_P}[F^{\otimes Q}\Psi]
+ &=\sum_m\tfrac{\omega_m}2
+   \bigl[\ev_\lambda F_m^{\otimes Q}v^+_m
+          +\ev_\lambda(RF_m)^{\otimes Q}v^-_m\bigr]\\
+ &=\tfrac12\ev_\lambda A+\tfrac12\ev_\lambda R(RA)
+   =\ev_\lambda A,
+ \end{aligned}
+\]
+which is (iv).  The kernels read only the symbols occurring in \(\cA\).
+The support statement is the definition of \(\cA\): \(\cJ(\mathbb D)\in\cA\)
+for \(\mathbb D\in\cA\) (Lemma~\ref{C:lem:target}), the atoms are products of
+\(m\)-adapted slot functions, and \(\Phi\) maps \(\cA\) into \(\cA\); hence the
+fixed point lies in \(\cA\).  Finally \eqref{C:eq:D-symbol} is
+Lemma~\ref{C:lem:symbol} below.
+\end{proof}
+
+\begin{lemma}[Symbol seminorm of the fixed point]\label{C:lem:symbol}
+For every atom \(F\) of Lemma~\ref{C:lem:pol} and every symbol \(m\),
+\(\norm{F^{\otimes Q}}_{[m]}\le C_Qt^d\).  Consequently, for every
+\(\mathbb D\) in the ball of Proposition~\ref{C:prop:carrier},
+\(\norm{\Phi(\mathbb D)}_{[m]}\le C_Q\delta_nt^d\), and the fixed point
+satisfies \eqref{C:eq:D-symbol}.
+\end{lemma}
+\begin{proof}
+The only symbols in an atom \(F=1+\theta t_rg_\epsilon\) come from the
+centring polynomials \(\overline g_i\) in \(g^\circ_i\), and
+\(\norm{g^\circ_i}_{[m]}\le Ct^d\) by \eqref{C:eq:centring}; hence
+\(\norm{g_\epsilon}_{[m]}\le Ct^d\) and \(\norm{1+\theta t_rg_\epsilon(u_s)}_{[m]}\le Ct^d\)
+for each slot \(s\), while \(\norm{1+\theta t_rg_\epsilon(u_s)}_\cA\le1+\eta_f/2\).
+By the derivation inequality of Lemma~\ref{C:lem:algebra} applied to the
+product over the \(Q\) slots, \(\norm{F^{\otimes Q}}_{[m]}\le Q(1+\eta_f/2)^{Q-1}Ct^d\).
+The same holds for \(RF\), since \(R\) preserves the seminorm.  Now
+\(\Phi(\mathbb D)-(1-\sum\omega_{m'})1=\sum_{m'}\omega_{m'}\tfrac12\{F_{m'}^{\otimes Q}+(RF_{m'})^{\otimes Q}\}\)
+with \(\lambda\)-free numbers \(\omega_{m'}\ge0\), \(\sum_{m'}\omega_{m'}\le C_1\norm{\mathbb D}\delta_n\),
+and the atom family does not depend on \(\mathbb D\); therefore
+\(\norm{\Phi(\mathbb D)}_{[m]}\le\sum_{m'}\omega_{m'}C_Qt^d\le C_Q\delta_nt^d\).
+The fixed point \(\mathbb D=\Phi(\mathbb D)\) inherits the bound.  (No
+contraction argument in the seminorm is needed, because \(\Phi\) depends on
+its argument only through the numbers \(\omega_{m'}\).)
+\end{proof}
+
+\subsection{Projectivity and the integrated identity}\label{C:sec:projectivity}
+For \(q\le Q\), \(T_q=(u_1,\dots,u_q)\) and \(Z\in(\Torus^d)^{Q-q}\), all
+atoms integrate to one for every \(\lambda\), so
+\(\E_{\nu_S}[F^{\otimes q}(T_q)\Psi]=\int\E_{\nu_S}[F^{\otimes Q}(T_q,Z)\Psi]dZ\)
+and \(D_q(T_q;\lambda)=\int D(T_q,Z;\lambda)dZ\).  Write
+\(\mathbb D_q=\int\mathbb D(\cdot,Z)dZ\) as shorthand for evaluated
+slot integration: the integrated site variables are replaced by their
+rough-field values and then integrated, giving Walsh-polynomial
+coefficients.  The retained coefficient lifts are always those
+specified in \eqref{C:eq:decomp} before this integration.  This notation
+does not assert that slot integration is an algebra homomorphism on
+\(\cA\), or require a uniformly bounded representative Wiener norm for
+\(\mathbb D_q\); the pointwise Walsh bounds below are sufficient.
+Integrating
+\eqref{C:eq:master} and applying \(\ell_{n,T_q}\), \(n\in\{0,\dots,\dg\}^q\), by
+Lemma~\ref{C:lem:cells}:
+\begin{multline}
+ \ell_{n,T_q}\Bigl(\E_{\nu_Q}[F^{\otimes q}\Psi]-\E_{\nu_P}[F^{\otimes q}\Psi]\Bigr)\\
+ =\sum_{0\ne e\le n}\ \sum_{f}\ \overline{\mathbb D}^{(f;S'_e)}_q
+ \prod_{i\in S'_e}\binom{n_i}{e_i}\bigl(tm(u_i)\bigr)^{e_i}\K_i^{(e_i,f_i)}(\Lambda(u_i))
+ \ \E_{\Pi_0}\prod_i(v_Q(u_i)^\top U)^{n_i-e_i},
+ \label{C:eq:proj}
+\end{multline}
+\(S'_e=\operatorname{supp}e\), \(f\in\{0,\dots,\dg\}^{S'_e}\),
+\(\K_i^{(e,f)}(\Lambda(u_i))\) the evaluated substitution polynomial, and
+the \emph{tapered integrated coefficients}
+\begin{equation}
+ \overline{\mathbb D}^{(f;S')}_q(T_q;\lambda)=\int\ev_\lambda\mathbb D^{(f;S')}(T_q,Z)\,\chi_Q(T_q,Z)\,dZ .
+ \label{C:eq:tapered}
+\end{equation}
+Compare with the untapered decomposition of the design weight,
+\(D_q=\sum_{f}\prod_{i\in S'}\Lambda(u_i)^{f_i}\,D_q^{(f;S')}\),
+\(D_q^{(f;S')}=\int\ev_\lambda\mathbb D^{(f;S')}dZ\):
+\begin{equation}
+ \begin{aligned}
+ D^{(f;S')}_q-\overline{\mathbb D}^{(f;S')}_q
+   &=\int\ev_\lambda\mathbb D^{(f;S')}(T_q,Z)
+                 \{1-\chi_Q(T_q,Z)\}\,dZ,\\
+ \norm{D^{(f;S')}_q(T_q;\cdot)
+              -\overline{\mathbb D}^{(f;S')}_q(T_q;\cdot)}_W
+   &\le C_Qg_q(T_q),
+ \end{aligned}
+ \label{C:eq:ghost-diff}
+\end{equation}
+where \(g_q(T_q):=\int\{1-\chi_Q(T_q,Z)\}\,dZ\).
+The bound is in Walsh norm, not only absolute value.  Indeed,
+Lemma~\ref{C:lem:algebra} and \eqref{C:eq:decomp} give
+\(\norm{\ev_\lambda\mathbb D^{(f;S')}(T_q,Z)}_W
+ \le\norm{\mathbb D^{(f;S')}}_\cA\le C_Q\) uniformly in \((T_q,Z)\).
+Since the taper is nonnegative and independent of \(\lambda\), the
+triangle inequality under the integral gives
+\[
+ \norm{D^{(f;S')}_q-\overline{\mathbb D}^{(f;S')}_q}_W
+ \le\int(1-\chi_Q)\norm{\ev_\lambda\mathbb D^{(f;S')}}_W\,dZ
+ \le C_Qg_q(T_q).
+\]
+The leakage also satisfies
+\begin{equation}
+ \int_{(\Torus^d)^q}g_q(T_q)\,dT_q\le C_Qt^d\Lambda^{M_Q},\qquad M_Q=Bd+Q-2,
+ \label{C:eq:ghost}
+\end{equation}
+because \(\{\chi_Q\ne1\}\subseteq\{\min_iP_i\le2t_n\}\), whose volume is
+\(\le C_Qt_n^d\{1+\log(1/t_n)\}^{Q-2}\) by Lemma~\ref{lem:bad-volume}.
+
+\begin{lemma}[Structure of the design weight]\label{C:lem:weights}
+Let \(T_q\) be a tuple of distinct points and \(S'\subseteq[q]\).
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item \(D_q\) is even in \(\lambda\); \(D_q^{(f;S')}\) has parity \((-1)^{\abs f}\)
+in \(\lambda\); \(\norm{D_q^{(f;S')}(T_q;\cdot)}_W\le C_Q\) and
+\(\norm{D_q^{(f;S')}(T_q;\cdot)}_W\le C_Q\delta_n\) for \(f\ne0\)
+(Walsh norm at fixed \(T_q\)).
+\item \(D_q^{(f;S')}\) does not depend on the site values \(\Lambda(u_i)\),
+\(i\in S'\).  Regard \(D_q^{(f;S')}(T_q;\cdot)\) as a Walsh polynomial in
+\(\lambda\) at fixed \(T_q\), and let \(J_{S'}=\bigcup_{i\in S'}J(u_i)\).  A
+sign \(\lambda_{m'}\), \(m'\in J_{S'}\), can enter it only through the
+explicit symbols of \(\mathbb D\) (the centring polynomials), through
+integrated slots, and through retained slots \(u_j\), \(j\notin S'\), that
+share a packet with some \(u_i\), \(i\in S'\).  Outside this last
+(collision) case, the Walsh monomials of \(D_q^{(f;S')}\) containing
+\(\lambda_{m'}\) have total mass \(\le C_Q\delta_nt^d\), uniformly in
+\(T_q\).  Consequently, writing \(\E_{J_{S'}}\) for the average over the
+signs in \(J_{S'}\) (at most \(N_0q\) of them), outside the collision case
+\[
+ \bigl\|D_q^{(f;S')}-\E_{J_{S'}}D_q^{(f;S')}\bigr\|_W\le C_Q\delta_nt^d ,
+\]
+\(\E_{J_{S'}}D_q^{(f;S')}\) does not depend on the signs in \(J_{S'}\), and
+both terms have parity \((-1)^{\abs f}\).
+\item If \(m(u_i)=0\) (site \(i\) not assigned to this block) then
+\(D_q\) does not contain \(\Lambda(u_i)\) at all.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) \(R\)-invariance of \(\mathbb D\) and \eqref{C:eq:decomp}; the norms are
+\(\norm{\mathbb D}\) and \(\norm{\mathbb D-1}\) since every \(X\)-monomial of
+\(\mathbb D-1\) has norm \(\le C_0\delta_n\).  (b) \(D_q^{(f;S')}\) is free of \(X_{S'}\) by the decomposition.  Fix
+\(i\in S'\) and a sign \(\lambda_{m'}\), \(m'\in J(u_i)\).  It enters
+\(D_q^{(f;S')}\) in three ways.  Write
+\(\mathbb D^{(f;S')}=\sum_{e,S}m^eW_{e,S}X^e\lambda^S\) (\(e|_{S'}=0\)), expand
+every evaluated site value into products of packets,
+\[
+ \Lambda(u_i)^{e_i}=\sum_{m_1,\dots,m_{e_i}}\lambda_{m_1}\cdots\lambda_{m_{e_i}}\,\psi_{m_1}(u_i)\cdots\psi_{m_{e_i}}(u_i),
+\]
+and integrate over \(Z\).  Then \(D_q^{(f;S')}\) is a sum, over \((e,S)\) and
+packet choices, of Walsh monomials with coefficients
+\(\int m^eW_{e,S}\prod\psi\,dZ\), and the mass of the monomials containing
+\(\lambda_{m'}\) is at most the sum of the absolute coefficients of the
+contributions in which \(\lambda_{m'}\) occurs explicitly, i.e.\ \(m'\in S\)
+or \(m'\) is one of the chosen packets (a product may cancel
+\(\lambda_{m'}\) through \(\lambda_{m'}^2=1\), which only decreases the mass).
+\emph{Explicit symbol \(m'\in S\):} the packet expansion of the site
+values contributes mass \(\le(c_d^{-1}N_0)^{\abs e}\le N_m^{\abs e}\) per term, so
+these contributions have mass
+\(\le\sum_e\sum_{S\ni m'}\norm{W_{e,S}}_\infty N_m^{\abs e}\le\norm{\mathbb D^{(f;S')}}_{[m']}\le\norm{\mathbb D}_{[m']}\le C_Q\delta_nt^d\)
+by \eqref{C:eq:D-symbol}.
+\emph{Chosen packet \(m'\) at an integrated slot \(u_z\):} such terms have
+\(e_z\ge1\), hence belong to \(\mathbb D-1\), so
+\(\sum_{e_z\ge1,S}\norm{W_{e,S}}_{\cW}N_m^{\abs e}\le\norm{\mathbb D-1}_\cA\le C_0\delta_n\).
+For one such term the sum of the absolute coefficients over the packet
+choices in which one of the \(e_z\) factors at slot \(z\) reads \(m'\) is
+at most
+\begin{multline*}
+ c_d^{-\abs e}e_z\norm{W_{e,S}}_\infty\int\abs{\psi_{m'}(u_z)}\Bigl(\sum_{a}\abs{\psi_a(u_z)}\Bigr)^{e_z-1}
+ \prod_{j\ne z}\Bigl(\sum_{a}\abs{\psi_a(u_j)}\Bigr)^{e_j}dZ\\
+ \le c_d^{-\abs e}e_zN_0^{\abs e-1}\norm{\psi_{m'}}_{L^1(\Torus^d)}\norm{W_{e,S}}_{\cW}
+ \le Ct^dN_m^{\abs e}\norm{W_{e,S}}_{\cW},
+\end{multline*}
+(the product over \(j\ne z\) runs over the integrated and the retained
+slots, the latter contributing their sup norms),
+where \(\norm{\psi_{m'}}_{L^1}\le Ct^d\) because \(\psi_{m'}\) is bounded by one
+and supported in a set of diameter \(\asymp t\) in the chart
+(\(\psi^\flat_{m'}=G_h\phi((\cdot-x_0)/\ell-m')\) and \(\ell/r=t\)).  Summing
+over the \(\le Q\) integrated slots and over \((e,S)\) with \(e_z\ge1\), these
+contributions have mass \(\le C_Qt^d\cdot C_0\delta_n\).
+\emph{Chosen packet \(m'\) at a retained slot \(u_j\), \(j\notin S'\):}
+\(\psi_{m'}(u_j)\ne0\) requires \(J(u_j)\cap J(u_i)\ne\varnothing\), i.e.\ the
+collision case, which is excluded wherever (b) is used.
+Altogether the mass of the monomials containing \(\lambda_{m'}\) is
+\(\le C_Q\delta_nt^d\) outside the collision case.  Finally,
+\(D_q^{(f;S')}-\E_{J_{S'}}D_q^{(f;S')}\) consists exactly of the monomials of
+\(D_q^{(f;S')}\) containing at least one sign of \(J_{S'}\) (averaging kills
+these and keeps the others), so its Walsh norm is at most the sum over the
+\(\le N_0q\) signs \(m'\in J_{S'}\) of the masses just bounded; the parity
+statement holds because averaging over a set of signs removes monomials
+without changing the degrees of the remaining ones.
+(c) The coefficient of \(X_i^e\) in \(\mathbb D\) carries \(m(u_i)^e\)
+(Proposition~\ref{C:prop:carrier}), and slot integration does not affect
+the retained slot \(u_i\).
+\end{proof}
+
+\begin{lemma}[Local-sign removal across all incident blocks]\label{C:lem:cross-block}
+Let \(\mathcal I\) be a set of at most \(Q\) distinct physical sites,
+all interior for the assignment partition, with pairwise disjoint
+packet sets \(J(x_i)\), \(i\in\mathcal I\).  Fix
+\(S'\subseteq\mathcal I\), and put
+\(J_{S'}=\bigcup_{i\in S'}J(x_i)\).
+For any incident active block \(k\), let
+\[
+ \mathcal I_k=\{i\in\mathcal I:x_i\in S_k\},\quad
+ T_k=(\theta_k(x_i))_{i\in\mathcal I_k},\quad q_k=\abs{\mathcal I_k},
+ \quad S'_k=\{i\in S':k(i)=k\}.
+\]
+Identify physical site labels with their slots in \(T_k\).
+For any \(f_k\in\{0,\dots,\dg\}^{S'_k}\), set
+\(A_k=D_{k,q_k}^{(f_k;S'_k)}(T_k;\cdot)\), with
+\(A_k=D_{k,q_k}\) when \(S'_k=\varnothing\).  Then
+\[
+ \norm{A_k-\E_{J_{S'}}A_k}_W\le C_Q\delta_nt^d .
+\]
+Both \(A_k\) and \(\E_{J_{S'}}A_k\) have parity
+\((-1)^{\abs{f_k}}\), and the latter is independent of all signs in
+\(J_{S'}\).  The conclusion includes blocks with \(S'_k=\varnothing\)
+and signs read at sites assigned to other blocks.
+\end{lemma}
+\begin{proof}
+Fix a packet index \(a\in J_{S'}\).  If \(a\notin\cJ_k\), the block
+kernel and all its coefficients are independent of \(\lambda_a\).
+Otherwise the collision-free assumption gives a unique
+\(i\in S'\) with \(a\in J(x_i)\).  We first check that no retained
+site-value factor in \(A_k\) can read this sign.
+
+If \(i\in\mathcal I_k\) and \(k(i)=k\), the slot belongs to \(S'_k\),
+and coefficient extraction removes its site variable.  If
+\(i\in\mathcal I_k\) and \(k(i)\ne k\), interior assignment gives
+\(\phi_k(x_i)=0\), hence \(m_k(x_i)=0\); every positive site-degree
+term vanishes by the representative formula.  If
+\(i\notin\mathcal I_k\), there is no such retained slot in this block.
+Every other retained point \(x_j\) has \(a\notin J(x_j)\) by
+collision-freeness.  The chart cutoff can only remove packet support,
+not introduce a new packet at a retained point.
+
+Consequently \(\lambda_a\) can enter only as an explicit symbol or
+through a ghost slot.  For the explicit-symbol contributions, the
+coefficient-extraction bound and Lemma~\ref{C:lem:symbol} give mass at
+most
+\[
+ \norm{\mathbb D_k^{(f_k;S'_k)}}_{[a]}
+ \le\norm{\mathbb D_k}_{[a]}
+ \le C_Q\delta_nt^d.
+\]
+For a ghost-slot contribution, expand its rough-field power into
+packets as in Lemma~\ref{C:lem:weights}(b).
+A term using \(a\) at a ghost slot has positive degree there and hence
+comes from \(\mathbb D_k-1\).  For each such representative, integrate
+one factor \(\abs{\psi_a}\), using
+\(\int\abs{\psi_a}\le Ct^d\), and bound the remaining packet sums by
+\(N_0\), the multipliers by \(c_d^{-1}\), and the representative by
+its Wiener norm.  Summing over the at most \(Q\) ghost slots costs
+\[
+ C_Qt^d\norm{\mathbb D_k-1}_\cA\le C_Q\delta_nt^d.
+\]
+Coefficient extraction is contractive and introduces only
+deterministic powers of \(m\), so the same estimate applies for every
+\(f_k\), including the empty extraction.  This proves that the
+Walsh monomials of \(A_k\) containing \(\lambda_a\) have total mass
+at most \(C_Q\delta_nt^d\).
+
+Averaging over \(J_{S'}\) deletes exactly the monomials containing at
+least one of those signs.  There are at most \(N_0Q\) such signs, so
+summing the last bound proves the assertion.  Averaging removes
+monomials without changing the parity of any monomial that remains;
+Lemma~\ref{C:lem:weights}(a) therefore gives the parity statement.
+\end{proof}
+
+\subsection{Design density and tilt}
+Given \(\lambda\) and labels \(H=(H_k)\), put
+\begin{equation}
+ \widetilde f_H(x)=\prod_{k:x\in S_k}F_{H_k}(\theta_k(x);\lambda),\qquad
+ Z(H,\lambda)=\int\widetilde f_H,\qquad f_H=\widetilde f_H/Z .
+ \label{C:eq:density}
+\end{equation}
+At most \(N_1\) blocks meet a point, so
+\begin{equation}
+ \Bigl(\frac{1-\eta_f}{1+\eta_f}\Bigr)^{N_1}\le f_H\le\Bigl(\frac{1+\eta_f}{1-\eta_f}\Bigr)^{N_1},
+ \label{C:eq:density-bounds}
+\end{equation}
+and \(\eta_f\) is fixed so that these lie in \([\underline f,\overline f]\).
+Let \(\nu_S=\bigl(\bigotimes_k\nu_{S,k}(\cdot\mid\lambda)\bigr)\otimes\Rad(\lambda)\)
+be the law of \((H,\lambda,U)\) on side \(S\); the \((H,\lambda)\)-marginals
+coincide (Proposition~\ref{C:prop:carrier}(i)).  Apply
+Lemma~\ref{lem:tilt}: here the density depends on \(\lambda\) as well as on
+\(H\), the tilted priors \eqref{eq:z-tilt} induce the same law of \(f_H\)
+and the same \(X^n\)-marginal, and the mixed joint density is
+\eqref{eq:z-cancel}, in which the untilted law has independent Rademacher packet signs
+and conditionally independent block draws given those signs.
+Unconditional independence is asserted only for components with
+disjoint enlarged dependence sets, as verified in
+Lemma~\ref{C:lem:links}.
+
+\section{Case C: proof}\label{C:sec:proof}
+
+\subsection{Mixtures and the two-point reduction}
+Let \(\PP_n\) and \(\mathbb Q_n\) be the laws of \((X_i,A_i,Y_i)_{i\le n}\)
+obtained by drawing \((H,U,\lambda)\sim\Pi_{S,n}\) (\(S=P,Q\)) and then
+\(n\) iid triples from the \(P\)-row, respectively the \(Q\)-row, of
+\eqref{C:eq:two-sides-a} (case~(a)) or \eqref{C:eq:two-sides-b} (case~(b)).
+By Lemma~\ref{C:lem:legal} every law in either mixture belongs to \(\cP\),
+and \(\tau(x_0)\) equals \(c_ac_b\Delta\) on the \(P\)-side and \(0\) on
+the \(Q\)-side.  By Lemma~\ref{lem:two-point}, Theorem~\ref{thm:main}
+in case~(C) follows from \(\TV(\PP_n,\mathbb Q_n)\le1/2\) for
+\(n\ge n_\varepsilon\), since \(\Delta=n^{-z}=n^{-(\rho+\varepsilon)}\).
+
+\subsection{Components and factorisation}
+By \eqref{eq:z-cancel} the \(X^n\)-marginals coincide, so
+\(\TV(\PP_n,\mathbb Q_n)\le\E\,\TV(\PP_n(\cdot\mid X^n),\mathbb Q_n(\cdot\mid X^n))\).
+Fix \(x^n\).  For a site \(i\) let \(\cK_i=\{k\text{ active}:x_i\in S_k\}\)
+and let the \emph{dependence set} be
+\[
+ \widetilde J_i=J(x_i)\cup\bigcup_{k\in\cK_i}\cJ_k ,
+\]
+the packets read at \(x_i\) or by any block meeting \(x_i\).  Declare
+\(i\sim j\) if \(\cK_i\cap\cK_j\ne\varnothing\) or
+\(\widetilde J_i\cap\widetilde J_j\ne\varnothing\), and let \(\{C\}\) be
+the components of the transitive closure; \(q_C=\abs C\),
+\(\cK(C)=\bigcup_{i\in C}\cK_i\), \(\widetilde J(C)=\bigcup_{i\in C}\widetilde J_i\).
+
+\begin{lemma}[Geometry of links]\label{C:lem:links}
+If \(i\sim j\) then \(\norm{x_i-x_j}\le C_Qr\).  A shared original packet
+(\(J(x_i)\cap J(x_j)\ne\varnothing\)) forces \(\norm{x_i-x_j}\le R_0\ell\).
+Distinct components have disjoint block sets and disjoint dependence
+sets, and the primitive variables \((H_k,U_k)_{k\in\cK(C)}\),
+\((\lambda_m)_{m\in\widetilde J(C)}\) of distinct components are
+independent under \(\nu_S(\cdot\mid\lambda)\otimes\Rad\).
+\end{lemma}
+\begin{proof}
+Blocks have diameter \(O(r)\) and a packet has diameter \(O(\ell)\le O(r)\);
+a packet in \(\cJ_k\) lies within \(R_0\ell\) of \(S_k\).  So two sites
+whose blocks share a packet, or whose packets or blocks intersect, are
+within \(C_Qr\).  Disjointness follows from the definition of \(\sim\), and
+independence from the product structure \eqref{eq:z-cancel}.
+\end{proof}
+
+The site likelihood \(L_i\) is a function of \((U_k)_{k\in\cK_i}\),
+\((\lambda_m)_{m\in J(x_i)}\) and \(w_i=(R_i,T_i)\) (the functions \(G_h\),
+\(\eta\), \(d_*\) are deterministic); the kernel of block \(k\) reads
+\((\lambda_m)_{m\in\cJ_k}\) (Proposition~\ref{C:prop:carrier}).  With
+\eqref{eq:z-cancel} and \eqref{C:eq:density}, the mixed joint density of
+\((x^n,w^n)\) under side \(S\) equals
+\[
+ \mathcal Z_n^{-1}4^{-n}\int\prod_{k}\prod_{i:k\in\cK_i}F_{H_k}(\theta_k(x_i);\lambda)
+ \prod_iL^S_i(w_i)\,d\nu_S(H,U\mid\lambda)\,d\Rad(\lambda),
+\]
+and by Lemma~\ref{C:lem:links} and Fubini the integral factorises over
+components:
+\begin{equation}
+ \PP_n(w^n\mid x^n)=\prod_C\frac{N^P_C(w_C)}{N_C},\qquad
+ \mathbb Q_n(w^n\mid x^n)=\prod_C\frac{N^Q_C(w_C)}{N_C},
+ \label{C:eq:factor}
+\end{equation}
+\[
+ N^S_C(w_C)=4^{-q_C}\int\prod_{k\in\cK(C)}\prod_{i\in C:k\in\cK_i}F_{H_k}(\theta_k(x_i);\lambda)
+ \prod_{i\in C}L^S_i(w_i)\,d\nu_S\,d\Rad,
+ \qquad N_C=\sum_{w_C}N^S_C(w_C),
+\]
+where \(N_C\) does not depend on \(S\): summing a cell over \(w_i\) gives
+\(\sum_{w_i}L_i(w_i)=4\) for any parameter, so
+\(N_C=\E_\lambda\E_{\nu}\prod_k\prod_iF_{H_k}=\E_\lambda\prod_{k\in\cK(C)}D_{q_k}(T_k;\lambda)\),
+with \(T_k\) the tuple of the \(q_k\) sites of \(C\) in \(S_k\) (in the
+chart of \(k\)).  Sites in no active block are singleton components with
+\(L^P_i=L^Q_i=1\).
+
+Hence, by Lemma~\ref{lem:hellinger}(a),(b), on the event that all
+components have \(q_C\le Q\),
+\begin{equation}
+ \TV(\PP_n(\cdot\mid x^n),\mathbb Q_n(\cdot\mid x^n))
+ \le\Bigl\{\sum_CH^2_C\Bigr\}^{1/2},\qquad
+ H^2_C=H^2\Bigl(\frac{N^P_C}{N_C},\frac{N^Q_C}{N_C}\Bigr).
+ \label{C:eq:tv-hell}
+\end{equation}
+
+\subsection{The component identity}\label{C:sec:component-identity}
+Fix a component \(C\) with \(q_C\le Q\).  For \(i\in C\) write
+\(\Lambda_i=\Lambda_\lambda(x_i)\), \(G_i=G_h(x_i)\), \(d_i=\ja\jb G_i^2\),
+\(e_{k,i}=v_Q(\theta_k(x_i))^\top U_k\) for \(k\in\cK_i\), and
+\(\cf_i=\cf(x_i)=\sum_{k\in\cK_i}\psi_k(x_i)e_{k,i}\); the shift variable at
+the site is \(\zeta_i=\mathfrak a\,\cf_i\) with the smooth amplitude
+\(\mathfrak a=b\) (case~(a)) or \(\mathfrak a=a\) (case~(b)), so that
+\(\mathfrak a\psi_k(x_i)\,t\,m_k(x_i)=\jsh\phi_k(x_i)\).  Let \(L_i(\zeta)\),
+\(\real_i(\zeta)\), \(\Delta^{(e)}_i(\zeta)\), \(\K_i^{(e,f)}\) be the objects
+of Section~\ref{C:sec:bridge} at the site \(x_i\) with the cell
+\(w_i=(R_i,T_i)\).  Then
+\begin{equation}
+ L^{Q,0}_i=L_i(\zeta_i),\qquad L^P_i=L_i(\zeta_i)+\real_i(\zeta_i),
+ \label{C:eq:LQ0-LP}
+\end{equation}
+where \(L^{Q,0}_i\) is the \(Q\)-likelihood at the actual (unshifted)
+parameter.  \(L_i(\zeta)\) is a polynomial of degree \(\dg\) in \(\zeta\),
+hence of degree \(\le\dg\) in each \(e_{k,i}\), and affine in
+\(\Lambda_i\), \(L_i=A_i+B_i\Lambda_i\) with \(B_i\) carrying the factor
+\(\jfi\); the same holds for every \(\partial_\zeta^eL_i\).
+
+\emph{\(P\)-side.}  Under \(\nu_P\), \(U\sim\Pi_0^{\otimes}\) independently of
+\(H\), so
+\begin{equation}
+ N^P_C=4^{-q_C}\E_\lambda\Bigl[D_C\,\E_{\Pi_0^\otimes}\prod_{i\in C}\bigl(L_i(\zeta_i)+\real_i(\zeta_i)\bigr)\Bigr],
+ \qquad D_C:=\prod_{k\in\cK(C)}D_{q_k}(T_k;\lambda).
+ \label{C:eq:NP}
+\end{equation}
+
+\emph{\(Q\)-side.}  \(\prod_{i\in C}L_i(\zeta_i)\) is a polynomial in the
+variables \(\{e_{k,i}\}\) of degree \(\le\dg\) in each, and for each block
+\(k\) of degree \(\le\dg q_k\le\dg Q\) in \(U_k\).  Expand it into monomials
+\(\prod_k\prod_ie_{k,i}^{n_{k,i}}\); the blocks are independent given
+\(\lambda\), so the \(\nu_Q\)-expectation of a monomial times the design
+factors is the product over \(k\) of
+\(\E_{\nu_{Q,k}}[F^{\otimes q_k}\prod_ie_{k,i}^{n_{k,i}}]\), each given by
+\eqref{C:eq:proj}.  Substituting and re-summing over the monomials, the
+binomial coefficients reassemble into Taylor coefficients
+(\(\sum_n(\text{coefficient})\binom{n}{e}x^{n-e}=\partial_x^eg(x)/e!\) for a
+polynomial \(g\)), and \(\partial_{e_{k,i}}=\mathfrak a\psi_k(x_i)\partial_{\zeta_i}\).
+This gives the exact expansion
+\begin{multline}
+ N^Q_C=4^{-q_C}\E_\lambda\sum_{(e_k,f_k)_k}\ \prod_{k\in\cK(C)}\Omega_k(f_k,e_k)\\
+ \times\E_{\Pi_0^\otimes}\Bigl[\prod_{i\in C\setminus S'}L_i(\zeta_i)\prod_{i\in S'}
+ \Bigl\{\prod_{k\in\cK_i:e_{k,i}\ge1}\frac{\phi_k(x_i)^{e_{k,i}}\K_i^{(e_{k,i},f_{k,i})}(\Lambda_i)}{e_{k,i}!}\Bigr\}
+ \jsh^{e(i)}\partial_\zeta^{e(i)}L_i(\zeta_i)\Bigr],
+ \label{C:eq:NQ}
+\end{multline}
+where \(e_k\in\{0,\dots,\dg\}^{T_k}\) is the increment pattern of block
+\(k\) on its sites, \(f_k\in\{0,\dots,\dg\}^{\operatorname{supp}e_k}\) the
+design exponents, \(e(i)=\sum_ke_{k,i}\), \(S'=\{i:e(i)\ge1\}\), and the
+weights are the tapered integrated coefficients \eqref{C:eq:tapered} of
+block \(k\),
+\[
+ \Omega_k(f_k,e_k)=\overline{\mathbb D}^{(f_k;\operatorname{supp}e_k)}_{k,q_k}(T_k;\lambda),
+ \qquad \Omega_k(\varnothing,0)=D_{q_k}(T_k;\lambda).
+\]
+(If \(e(i)>\dg\) the factor \(\partial_\zeta^{e(i)}L_i\) vanishes.)
+Which blocks can act at a site is read off from the explicit factor
+\(\prod_{i:e_{k,i}\ge1}\phi_k(x_i)^{e_{k,i}}\) in \eqref{C:eq:NQ}: a
+summand with \(e_{k,i}\ge1\) at a site with \(\phi_k(x_i)=0\) vanishes.
+(The weight \(\Omega_k(f_k,e_k)\) itself need not vanish: for \(f_k=0\) it
+is the integrated \(X\)-free coefficient, which is bounded but in
+general not small, Lemma~\ref{C:lem:walsh-bounds}.  When \(f_{k,i}\ge1\) the weight does
+vanish, because by Proposition~\ref{C:prop:carrier} the coefficient of
+\(X_i^{f}\) in \(\mathbb D_k\) carries \(m_k(u_i)^{f}=0\); this is consistent,
+since \(f_{k,i}\ge1\) requires \(e_{k,i}\ge1\).)  Hence every nonzero
+summand has, at each site with \(e_{k,i}\ge1\), \(\phi_k(x_i)>0\), i.e.\
+the site is assigned to \(k\) or lies in the transition layer; for an
+interior site assigned to \(k\), \(\phi_k(x_i)=1\) and \(k\) is the only
+block that can carry a nonzero increment at \(i\).  In case~(a) each \(e_{k,i}\in\{0,1\}\),
+a site has only one factor \(\zeta_i\) in the multilinear cell, and
+\eqref{C:eq:NQ} is the sum over pairwise disjoint \(S'_k\subseteq C\cap S_k\)
+and \(A_k\subseteq S'_k\) (the sites with \(f=1\)) of
+\[
+ \prod_k\Omega_k(A_k,S'_k)\
+ \E_{\Pi_0^\otimes}\Bigl[\prod_{i\notin S'}L_i\prod_k\Bigl\{\prod_{i\in S'_k\setminus A_k}\jb\phi_k(x_i)\Lambda_i\,\partial_yL_i
+ \prod_{i\in A_k}\jb\phi_k(x_i)\varkappa_i\,\partial_yL_i\Bigr\}\Bigr].
+\]
+
+\subsection{Matching}
+Let \(\mathrm{cl}(C)=\one\{\exists i\ne j\in C: J(x_i)\cap J(x_j)\ne\varnothing\}\),
+\(\mathrm{tr}(C)=\one\{C\cap\mathcal L\ne\varnothing\}\), and
+\(g_C=\sum_{k\in\cK(C)}g_{q_k}(T_k)\) with \(g_q\) from \eqref{C:eq:ghost-diff}.
+
+\begin{lemma}[Walsh bounds]\label{C:lem:walsh-bounds}
+For \(U\) in the legal ball and \(n\) large:
+\(\norm{L_i(\zeta_i)}_W,\ \norm{\partial_\zeta^eL_i(\zeta_i)}_W\le C\) (\(e\le\dg\));
+\(\norm{\real_i(\zeta_i)}_W\le C\Delta\); \(\jsh\le\jfi\), \(\jsh^2\le c_ac_b\Delta\);
+\(\norm{\K_i^{(e,f)}(\Lambda_i)}_W\le C\);
+\(\norm{\Omega_k(f,e)}_W\le C_Q\) for all \((f,e)\), and \(\le C_Q\delta_n\)
+when \(f\ne0\) (for \(f=0\ne e\) the weight
+\(\Omega_k(0,e)=\int\ev_\lambda\mathbb D^{(0;S')}\chi_Q\,dZ=\int\chi_Q\,dZ+O(\delta_n)\)
+is uniformly \(O(1)\) and need not be \(O(\delta_n)\); it can vanish, e.g.\
+when the tuple lies where the taper is zero, and only the upper bound is
+used); the same for the untapered \(D^{(f;S')}_{q_k}\); and \(\Omega_k(f,e)\),
+\(D^{(f;S')}_{q_k}\) have parity \((-1)^{\abs f}\) in \(\lambda\) (the taper
+does not affect parity or norms).
+\end{lemma}
+\begin{proof}
+\eqref{C:eq:L-real}, \(\abs{\zeta_i}\le C_Qc\), \(\norm{\Lambda_i}_W\le N_0\),
+\(\ja,\jb\le1\), \(\abs{\eta_i}\le3\ja^2\), \eqref{C:eq:jsh-square},
+\(\varkappa_i\le\ja^2\le1\), \(G_i^2\le1\), and Lemma~\ref{C:lem:weights}(a).
+\end{proof}
+
+\begin{lemma}[Parity count]\label{C:lem:parity}
+Let \(\Theta\) be a Walsh polynomial in \(\lambda\) of parity
+\((-1)^{\abs f}\), \(f=(f_k)_k\), and consider a term of the form
+appearing in \eqref{C:eq:NQ},
+\[
+ \Xi=\Theta\cdot\prod_{i\in C\setminus S'}L_i(\zeta_i)\prod_{i\in S'}
+ \Bigl\{\prod_{k:e_{k,i}\ge1}\phi_k(x_i)^{e_{k,i}}\K_i^{(e_{k,i},f_{k,i})}(\Lambda_i)\Bigr\}
+ \jsh^{e(i)}\partial_\zeta^{e(i)}L_i(\zeta_i),\qquad S'\ne\varnothing .
+\]
+Then \(\abs{\E_\lambda\Xi}\le C_Q\norm\Theta_W\Delta\), uniformly in \(U\) in
+the legal ball and in the cells.
+\end{lemma}
+\begin{proof}
+Expand each cell factor \(L_i\) or \(\partial_\zeta^{e}L_i\) as
+\(A+B\Lambda_i\) and choose, for each, either the \(\lambda\)-free part or
+the part \(B\Lambda_i\) (which carries the factor \(\jfi\)); let \(\#y\) be
+the number of factors \(B\Lambda_i\) chosen.  Every monomial of \(\Theta\)
+has degree \(\equiv\abs f\), every monomial of a nonzero
+\(\K_i^{(e,f)}(\Lambda_i)\) has degree \(\equiv e+f\pmod2\) (Section~\ref{C:sec:bridge}),
+and \(\Lambda_i\) has degree one.  Since the parity of the degree of a
+product of Walsh monomials is the sum of the parities, every monomial of
+the chosen term has degree \(\equiv\abs f+\sum_{k,i}(e_{k,i}+f_{k,i})+\#y
+\equiv\abs e+\#y\pmod2\), where \(\abs e=\sum_ie(i)\ge1\).  A Walsh polynomial
+all of whose monomials have odd degree has zero \(\lambda\)-mean.  Hence
+only the choices with \(\abs e+\#y\) even contribute, and for these the
+Walsh norm of the term is \(\le C_Q\norm\Theta_W\jsh^{\abs e}\jfi^{\#y}\) by
+Lemma~\ref{C:lem:walsh-bounds}.  If \(\abs e=1\) then \(\#y\ge1\) and
+\(\jsh\jfi=c_ac_b\Delta\); if \(\abs e\ge2\) then \(\jsh^2\le c_ac_b\Delta\).
+Summing over the \(\le2^{Q}\) choices proves the claim.
+\end{proof}
+
+\begin{proposition}[Component matching]\label{C:prop:matching}
+For every component \(C\) with \(q_C\le Q\) and every cell \(w_C\),
+\begin{equation}
+ \abs{N^Q_C(w_C)-N^P_C(w_C)}\le4^{-q_C}C_Q\Delta\bigl[g_C+\mathrm{cl}(C)+\mathrm{tr}(C)+\delta_nt^d\bigr].
+ \label{C:eq:matching}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Write \(\widehat N^Q_C\) for \eqref{C:eq:NQ} with every tapered weight
+\(\Omega_k(f_k,e_k)\), \((f_k,e_k)\ne(\varnothing,0)\), replaced by the
+untapered \(D^{(f_k;\operatorname{supp}e_k)}_{q_k}\) (and
+\(\Omega_k(\varnothing,0)=D_{q_k}\) unchanged).
+
+\emph{Step 1: taper.}  \(N^Q_C-\widehat N^Q_C\) is a sum of \(C_Q\) terms,
+each with \(S'\ne\varnothing\) and containing at least one factor
+\(\Omega_k-D^{(f_k;\cdot)}_{q_k}\), of Walsh norm \(\le C_Qg_{q_k}(T_k)\) and
+parity \((-1)^{\abs{f_k}}\) by \eqref{C:eq:ghost-diff} and
+Lemma~\ref{C:lem:weights}(a).  The product \(\Theta\) of the weights and
+differences has parity \((-1)^{\abs f}\) and Walsh norm
+\(\le C_Qg_{q_k}(T_k)\), so Lemma~\ref{C:lem:parity} bounds each term by
+\(C_Q\Delta g_{q_k}(T_k)\): \(\abs{N^Q_C-\widehat N^Q_C}\le4^{-q_C}C_Q\Delta g_C\).
+
+\emph{Step 2: crude bound when \(\mathrm{cl}(C)=1\) or \(\mathrm{tr}(C)=1\).}
+In \eqref{C:eq:NP}, every term with at least one \(\real_i\) has Walsh norm
+\(\le C_Q\Delta\), and the term with none equals the
+\((f_k,e_k)=(\varnothing,0)\) term of \(\widehat N^Q_C\).  Every other term
+of \(\widehat N^Q_C\) has \(S'\ne\varnothing\) and is bounded by
+Lemma~\ref{C:lem:parity} with \(\Theta=\prod_kD^{(f_k;\cdot)}_{q_k}\) by
+\(C_Q\Delta\).  Hence \(\abs{\widehat N^Q_C-N^P_C}\le4^{-q_C}C_Q\Delta\).
+
+\emph{Step 3: exact matching when \(\mathrm{cl}(C)=\mathrm{tr}(C)=0\).}
+All sites are interior; site \(i\) is assigned to \(k(i)\).  By
+Lemma~\ref{C:lem:weights}(c) and the remark after \eqref{C:eq:NQ}, only
+\(k(i)\) can have a nonzero increment or positive retained site degree
+at \(i\).  Other blocks can still read its signs through symbols or
+ghost slots; this is controlled below.  If \(k(i)\) is inactive, then
+\(G_i=\Lambda_i=d_i=0\), so every term choosing an increment or
+\(\real_i\) at that site is zero.  Such zero terms may be omitted.  Hence in
+\eqref{C:eq:NQ} the increment patterns are \(e=(e_i)_{i\in S'}\) with
+\(e_i\in\{1,\dots,\dg\}\), \(\phi_{k(i)}(x_i)=1\), the exponents are
+\(f=(f_i)_{i\in S'}\), and the untapered weights multiply to
+\[
+ \prod_kD^{(f_k;S'_k)}_{q_k}=D_C^{(f;S')},\qquad
+ D_C=\sum_{f\in\{0,\dots,\dg\}^{S'}}\Lambda_{S'}^f\,D_C^{(f;S')},
+\]
+the coefficients prescribed by the representative extraction
+\eqref{C:eq:decomp}, multiplied across blocks and then evaluated.
+Only \(k(i)\) contributes a positive retained site degree at \(i\).
+This is an identity for the specified expansion, not a claim of
+uniqueness after rough-field evaluation.  Thus
+\begin{equation}
+ \widehat N^Q_C=4^{-q_C}\E_\lambda\sum_{S'\subseteq C}\sum_{f}D_C^{(f;S')}
+ \E_{\Pi_0^\otimes}\Bigl[\prod_{i\notin S'}L_i(\zeta_i)\prod_{i\in S'}
+ \sum_{e_i=1}^{\dg}\K_i^{(e_i,f_i)}(\Lambda_i)\,\Delta_i^{(e_i)}(\zeta_i)\Bigr],
+ \label{C:eq:NQ-interior}
+\end{equation}
+with \(\Delta_i^{(e)}(\zeta)=\jsh^e\partial_\zeta^eL_i(\zeta)/e!\) as in
+\eqref{C:eq:increments}, and by \eqref{C:eq:NP}
+\begin{equation}
+ N^P_C=4^{-q_C}\E_\lambda\sum_{S'\subseteq C}\sum_{f}\Lambda_{S'}^fD_C^{(f;S')}
+ \E_{\Pi_0^\otimes}\Bigl[\prod_{i\notin S'}L_i(\zeta_i)\prod_{i\in S'}\real_i(\zeta_i)\Bigr].
+ \label{C:eq:NP-interior}
+\end{equation}
+The terms with \(S'=\varnothing\) agree exactly and need no
+replacement.  Fix \(S'\ne\varnothing\) and \(f\) for a remaining pair of
+terms, and let \(J_{S'}=\bigcup_{i\in S'}J(x_i)\).  For every incident
+block, including one with \(S'_k=\varnothing\), define
+\[
+ A_k=D_{k,q_k}^{(f_k;S'_k)}(T_k;\cdot),\qquad
+ \widetilde D_k=\E_{J_{S'}}A_k,\qquad
+ \widetilde D_C=\prod_{k\in\cK(C)}\widetilde D_k.
+\]
+Lemma~\ref{C:lem:cross-block}, applied with \(\mathcal I=C\), gives
+\[
+ \norm{A_k-\widetilde D_k}_W\le C_Q\delta_nt^d,
+ \qquad \norm{A_k}_W+\norm{\widetilde D_k}_W\le C_Q,
+\]
+and both coefficients have parity \((-1)^{\abs{f_k}}\).
+In particular, \(\widetilde D_C\) is independent of every sign in
+\(J_{S'}\).  Averaging is performed factor by factor; no factorization
+of \(\E_{J_{S'}}\) over the dependent block coefficients is assumed.
+
+\emph{Exact matching of the replaced terms.}
+Replace \(D_C^{(f;S')}\) by the same \(\widetilde D_C\) in
+\eqref{C:eq:NQ-interior} and \eqref{C:eq:NP-interior}.
+Since \(\mathrm{cl}(C)=0\), the fields \(\Lambda_i\), \(i\in S'\), are
+independent of each other, of all remaining retained fields, of
+\(\widetilde D_C\), and of the baseline coefficients
+\(U\sim\Pi_0^\otimes\).  At fixed \(U\) and fixed remaining signs,
+average these fields one site at a time.  The \(Q\)-side site factor is
+\[
+ \sum_{e=1}^{\dg}\E_{\Lambda_i}
+       [\K_i^{(e,f_i)}(\Lambda_i)\Delta_i^{(e)}(\zeta_i)],
+\]
+whereas the \(P\)-side factor is
+\(\E_{\Lambda_i}[\Lambda_i^{f_i}\real_i(\zeta_i)]\).
+They agree by Lemma~\ref{C:lem:bridge} for every baseline value
+\(\zeta_i\) and every binary cell.  All other factors are the same,
+so the replaced \((S',f)\)-terms agree exactly.
+
+\emph{Residual dependence.}
+The difference
+\(D_C^{(f;S')}-\widetilde D_C=\prod_kA_k-\prod_k\widetilde D_k\)
+is a telescoping sum of at most \(\abs{\cK(C)}\le N_1Q\) products.
+Each product contains one factor \(A_k-\widetilde D_k\) of Walsh norm
+at most \(C_Q\delta_nt^d\), all other factors have Walsh norm at most
+\(C_Q\), and the product has parity \((-1)^{\abs f}\).
+Lemma~\ref{C:lem:parity} therefore bounds the replacement error in the
+\(Q\)-side term by \(C_Q\Delta\delta_nt^d\).
+On the \(P\)-side, \(S'\ne\varnothing\) guarantees at least one
+\(\real_i\) factor of Walsh norm at most \(C\Delta\);
+\(\norm{\Lambda_{S'}^f}_W\le C_Q\), so its replacement error has the
+same bound directly.  There are only \(C_Q\) choices of \((S',f)\),
+whence
+\[
+ \abs{\widehat N^Q_C-N^P_C}
+       \le4^{-q_C}C_Q\Delta\delta_nt^d
+ \quad\text{when }\mathrm{cl}(C)=\mathrm{tr}(C)=0.
+\]
+
+Combining the three steps gives \eqref{C:eq:matching}.
+\end{proof}
+
+\begin{lemma}\label{C:lem:HC}
+For every component with \(q_C\le Q\),
+\begin{equation}
+ H^2_C\le C_Q\Delta^2\bigl[g_C+\mathrm{cl}(C)+\mathrm{tr}(C)+\delta_nt^d\bigr].
+ \label{C:eq:HC}
+\end{equation}
+\end{lemma}
+\begin{proof}
+\emph{Normalisation.}  \(N_C=\E_\lambda D_C\in[(1-\eta_f)^{QK},(1+\eta_f)^{QK}]\)
+with \(K=\abs{\cK(C)}\le N_1Q\).
+\emph{Cell lower bound.}  For every \(\lambda\), \(U\) in the legal ball and
+\(w_i\), \eqref{eq:walsh} gives
+\(L^P_i\ge1-\abs{p}-\abs{y+\tau(1+p)}-\abs{py+\tau(1+p)}
+\ge1-C_Qc_a-C_Qc_b-o(1)\ge\tfrac12\) for small \(c_a,c_b\) and large \(n\)
+(Lemma~\ref{C:lem:legal}); hence \(\E_{\Pi_0^\otimes}\prod_iL^P_i(w_i)\ge2^{-q_C}\)
+and \(N^P_C(w_C)/N_C\ge8^{-Q}=:c_Q\) by \eqref{C:eq:NP}.
+\emph{Conclusion.}  By Lemma~\ref{lem:hellinger}(c) and
+\eqref{C:eq:matching}, with \(\varrho_C=g_C+\mathrm{cl}+\mathrm{tr}+\delta_nt^d\le C_Q\),
+\(H^2_C\le c_Q^{-1}4^{Q}\,N_C^{-2}(4^{-q_C}C_Q\Delta\varrho_C)^2\le C_Q\Delta^2\varrho_C^2\le C_Q\Delta^2\varrho_C\).
+\end{proof}
+
+\subsection{Hellinger sums}
+Let \(m_I\) be the marginal density of \((X_i)_{i\in I}\) under the common
+design law; \(m_I\le\overline f^{\,\abs I}\) since \(f_H\le\overline f\).
+Let \(\mathcal A_n=\bigcup_{k\ \rm active}S_k\) be the active region;
+\(\abs{\mathcal A_n}\le C h^d\) (there are \(O(h^dr^{-d})\) active blocks of
+volume \(Cr^d\)), and \(\operatorname{supp}G_h\subseteq\mathcal A_n\).  A
+site outside \(\mathcal A_n\) has \(\cK_i=\varnothing\) and
+\(J(x_i)=\varnothing\), hence is a singleton component with
+\(L^P_i=L^Q_i=1\) and \(H^2_C=0\); only components meeting
+\(\mathcal A_n\) contribute.  Call \(I\) \emph{active} if it is connected
+(for \(\sim\)) and \(x_I\cap\mathcal A_n\ne\varnothing\); this is a property
+of \(x_I\), and the right side of \eqref{C:eq:HC} for \(C=I\) depends only
+on \(x_I\).  Since components are connected,
+\begin{equation}
+ \E\sum_{C:q_C\le Q}H^2_C
+ \le C_Q\Delta^2\sum_{q=1}^Q\binom nq\int\one\{I\text{ active}\}\bigl[g_I+\mathrm{cl}(I)+\mathrm{tr}(I)+\delta_nt^d\bigr]m_I\,dx_I .
+ \label{C:eq:hell-sum}
+\end{equation}
+
+\begin{lemma}\label{C:lem:sums}
+For \(\abs I=q\le Q\), with \(V_q:=\int\one\{I\text{ active}\}m_I\,dx_I\le C_Qh^d(C_Qr)^{d(q-1)}\),
+\begin{align*}
+ n^q\int\one\{I\text{ active}\}g_I\,m_I\,dx_I&\le C_Q\,nh^dt^d\Lambda^{M_Q}(nr^d)^{q-1},\\
+ n^q\int\one\{I\text{ active}\}\mathrm{cl}(I)\,m_I\,dx_I&\le C_Q\,n^2h^d\ell^d(nr^d)^{q-2}\quad(q\ge2),\\
+ n^q\int\one\{I\text{ active}\}\mathrm{tr}(I)\,m_I\,dx_I&\le C_Q\,nh^dt^d(nr^d)^{q-1},\\
+ n^q\delta_nt^dV_q&\le C_Q\,nh^dt^d\delta_n(nr^d)^{q-1}.
+\end{align*}
+Consequently \(\E\sum_{C:q_C\le Q}H_C^2\le C_Q\Delta^2\{nh^dt^d\Lambda^{M_Q}+n^2h^d\ell^d\}\to0\).
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{C:lem:links} every link has length \(\le C_Qr\).  Order the
+sites of an active \(I\) so that the first site lies in \(\mathcal A_n\) and
+each later site is linked to an earlier one (\(C_Q\) orderings; a
+connected set meeting \(\mathcal A_n\) admits such an ordering); the first
+site has volume \(\abs{\mathcal A_n}\le Ch^d\), each later one
+\((C_Qr)^d\); this gives \(V_q\) (for \(q=1\) it is \(\abs{\mathcal A_n}\)).
+
+\emph{Ghost.}  Fix the block \(k_0\) in \(g_I\) and its sites \(I_0\),
+\(q_0=\abs{I_0}\ge1\); order \(I\) with \(I_0\) first.  There are
+\(O(h^dr^{-d})\) active blocks; given \(k_0\), the sites of \(I_0\) lie in
+\(S_{k_0}\) and contribute \(\int_{(\Torus^d)^{q_0}}g_{q_0}\,dT\le C_Qt^d\Lambda^{M_Q}\)
+by \eqref{C:eq:ghost}, i.e.\ \(C_Qr^{dq_0}t^d\Lambda^{M_Q}\) in physical
+units; the other \(q-q_0\) sites contribute \((C_Qr)^d\) each.
+
+\emph{Collision.}  Choose the pair with a shared packet: the first site
+in \(\operatorname{supp}G_h\) (\(Ch^d\)), the second within \(R_0\ell\)
+(\(C\ell^d\)), the rest \((C_Qr)^d\) each.
+
+\emph{Transition.}  Choose the site in \(\mathcal L\); since \(I\) is
+active, connected, and all links have length \(\le C_Qr\), this site lies
+within \(C_QQr\) of \(\mathcal A_n\), i.e.\ in the transition layer of one
+of the \(O(h^dr^{-d})\) blocks within that distance of the active region,
+a set of volume \(\le C_dt^d\cdot O(h^d)\) in total; the rest
+\((C_Qr)^d\) each.
+
+\emph{Residual.}  \(V_q\) times \(\delta_nt^d\).
+
+\emph{Conclusion.}  \(nr^d=n^{-cd\varepsilon}\le1\) and \(\delta_n\le1\), so all
+four bounds are \(\le C_Q\{nh^dt^d\Lambda^{M_Q}+n^2h^d\ell^d\}\); apply
+\eqref{eq:singleton}--\eqref{eq:collision}.
+\end{proof}
+
+\subsection{High components}\label{C:sec:high}
+Let \(\mathcal E_n\) be the event that some component has more than
+\(Q\) sites.  Such a component meets \(\mathcal A_n\) (components outside
+\(\mathcal A_n\) are singletons), so some active set \(I\) of exactly
+\(Q+1\) sites exists, and by the ordering argument
+\[
+ \PP(\mathcal E_n)\le\binom n{Q+1}\int\one\{I\text{ active}\}m_I\,dx_I
+ \le C_Q\overline f^{\,Q+1}n^{Q+1}h^d(C_Qr)^{dQ}\to0
+\]
+by \eqref{eq:high}.
+
+\subsection{Conclusion}
+By Lemma~\ref{lem:components} (the conditional laws factor over the
+components on \(\mathcal E_n^c\)), Lemma~\ref{C:lem:sums} and
+Section~\ref{C:sec:high},
+\[
+ \TV(\PP_n,\mathbb Q_n)\le\PP(\mathcal E_n)+\Bigl\{\E\sum_{C:q_C\le Q}H^2_C\Bigr\}^{1/2}\longrightarrow0 ,
+\]
+so \(\TV(\PP_n,\mathbb Q_n)\le1/2\) for \(n\ge n_\varepsilon\), and the
+two-point reduction (Lemma~\ref{lem:two-point}) proves
+Theorem~\ref{thm:main} in case~(C) for all sufficiently small fixed
+\(\varepsilon>0\).  For an arbitrary prescribed
+\(\varepsilon>0\), apply the construction with a fixed
+\(0<\varepsilon_0\le\varepsilon\) in that range; since
+\(n^{-(\rho+\varepsilon_0)}\ge n^{-(\rho+\varepsilon)}\), the stated bound
+follows after changing the constant.  \qed
+
+\section{Case C: remark}\label{C:sec:remarks}
+
+\begin{remark}[What the carrier does]
+The common design density may depend on the rough field: a label law
+independent of \(\lambda\) does not make its evaluated density atoms
+independent of \(\lambda\).  The construction chooses the \(Q\)-side
+conditional law of the smooth coefficients to reproduce the
+\emph{design-weighted} moment increments.  The substitution polynomials
+\eqref{C:eq:K} supply the design-weighted part of the \(P\)-side real
+field.  For an interior, collision-free component, the untapered cells
+match exactly after the block coefficients have been averaged over the
+selected local signs.  Lemma~\ref{C:lem:cross-block} controls the error
+of this replacement, including in blocks with no increment.
+
+Only upper bounds on design coefficients and their residual local-sign
+dependence are used: Lemma~\ref{C:lem:weights} and
+Lemma~\ref{C:lem:cross-block} give the required bounds.  No sharp
+asymptotic order for a particular pair-design coefficient is claimed.
+The remaining discrepancy is charged to the taper, collision,
+transition, and residual terms in Proposition~\ref{C:prop:matching}.
+The decisive properties are bounded site degree, assignment of each
+interior site's jitter to one block, and reflection symmetry for the
+parity count.  The representative-space formulation keeps these
+properties valid without identifying representative arrays that have
+the same realization.  None of these corrections changes the scales
+or proves the endpoint \(\varepsilon=0\) in case~(C).
+\end{remark}
+
+
+\begin{thebibliography}{9}
+\bibitem{KBRW} E.~H. Kennedy, S.~Balakrishnan, J.~M. Robins, L.~Wasserman.
+Minimax rates for heterogeneous causal effect estimation.
+\emph{Annals of Statistics} 52(2), 793--816, 2024.
+\bibitem{Tsybakov} A.~B. Tsybakov. \emph{Introduction to Nonparametric
+Estimation}. Springer, 2009.
+\bibitem{ODonnell} R.~O'Donnell. \emph{Analysis of Boolean Functions}.
+Cambridge University Press, 2014.
+\end{thebibliography}
+
+\end{document}
