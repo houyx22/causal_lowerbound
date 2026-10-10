@@ -1,6 +1,33 @@
-# Part B 与 Part C 的 Lean 形式化
+# Part B、Part C 与两尺度上界的 Lean 形式化
 
 [项目首页](../README.md) · [复现说明](../docs/REPRODUCING.md) · [验证记录](../docs/VERIFICATION.md)
+
+两尺度上界的统一主速率定理已完成并通过整库构建与公理审计（2026-10-11）。
+最终入口是 [`CausalLowerbound.UpperBound.paper_upper_bound`](CausalLowerbound/UpperBound/PaperUpperBound.lean)，
+总入口为 [`CausalLowerbound/UpperBound.lean`](CausalLowerbound/UpperBound.lean)。
+
+定理为全部正光滑度 `α, β, γ` 构造原始 `n` 个 iid 观测上的可测估计量，
+在全部合法模型及整个闭立方体的目标点上统一控制平均绝对误差：
+低光滑度时为 `C n^(-ρ_TS)`，高光滑度及临界点为 `C n^(-γ/(2γ+d))`。
+其中 `s=(α+β)/2`、`s₁=(min α 1+min β 1)/2`，
+`ρ_TS=2(s+s₁)/(d+4s₁+2ds₁/γ)`，分界为 `s*=dγ/[2(2γ+d)]`。
+估计量、风险常数和样本量阈值均在模型与目标点之前选定。
+
+证明覆盖实际 Taylor 系数、总体偏差、带完整元组权重的总体 Gram 下界、
+非对称矩阵扰动、全部重叠模式的向量／算子二阶矩、截断逆可测性及原始样本分组。
+最终定理没有将这些结论作为附加前提，也不要求估计密度、倾向函数或基线函数。
+整数光滑度 `m` 使用 `m-1` 阶连续导数和 Lipschitz 顶阶导数。
+响应允许为任意实数；证明仅用 `E[Y²|X]≤M₂`，弱于论文的按治疗组条件二阶矩假设。
+
+构造采用 `(p+1)^d` 个辅助张量节点，另加锚点和近邻点，
+其中 `p=max(qα,qβ,qγ)`。这是固定阶的替代模板，已证明节点数仅影响常数、保持论文速率。
+`sampleStencilEstimate_risk_bound` 给出具有显式数值带宽条件的有限样本主界；
+这些条件在最终速率定理中全部由选定带宽消去。
+这是上界结论，不声称证明严格低光滑度区间的匹配 minimax 下界。
+
+当前上界目录包含 76 个模块、515 条显式定理和 130 个 `def`／`abbrev` 声明。
+整库构建和 6,194 个定理／构造入口的公理审计均通过；
+详见[验证记录](../docs/VERIFICATION.md)。
 
 Part B 状态：第 1、2、3 项均已完成；实际实验的全局 TV 趋零、先验混合识别和最终 minimax 下界已通过 Lean 检查（2026-10-03）。
 最终入口是 `CausalLowerbound/PartB/PaperMinimax.lean` 的 `paper_partB_minimax`。

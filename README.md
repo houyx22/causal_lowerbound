@@ -5,6 +5,12 @@ Lean 4 formalization of minimax lower bounds for pointwise CATE estimation with 
 本项目收录论文原稿及其 Lean 4 形式化。目前 **Part B 和 Part C 已完成，Part A 尚未完成**。
 完整论文覆盖三种情形，因此不能将当前状态表述为整篇主定理已经全部形式化。
 
+另附的两尺度上界 `rho_ts_upper_bound.pdf` 的统一主速率定理已完成（2026-10-11）：
+[`paper_upper_bound`](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean)
+覆盖实值响应、闭立方体边界及低／高光滑度两种速率。
+这部分使用完整的实值响应模型，区别于下述二元响应下界子模型。
+整库构建和公理审计已通过，见[验证记录](docs/VERIFICATION.md)。
+
 ## 问题的数学表述
 
 ### 观测模型与估计目标

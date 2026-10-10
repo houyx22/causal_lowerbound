@@ -32,7 +32,7 @@ lake env lean Audit.lean
 
 ```text
 Build completed successfully.
-Axiom audit passed for 5334 theorem/definition roots. Only propext, Classical.choice, and Quot.sound are allowed.
+Axiom audit passed for 6194 theorem/definition roots. Only propext, Classical.choice, and Quot.sound are allowed.
 ```
 
 入口数量会随新增声明发生变化。成功条件是命令退出码为 0，且没有出现白名单以外的公理。
