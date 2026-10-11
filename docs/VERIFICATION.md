@@ -1,6 +1,55 @@
 # 验证记录
 
-本记录包含 2026-10-04 完成的 Part B 与 Part C 版本，以及 2026-10-11 完成的两尺度上界主速率定理和此前检查点。
+本记录包含 2026-10-04 完成的 Part B 与 Part C 版本，以及 2026-10-11 完成的两尺度上界、均匀协变量主下界、Part A 和此前检查点。
+
+## 2026-10-11：均匀协变量主下界与 Part A 完成
+
+最终入口为 [`paper_uniform_minimax_explicit`](../formalization/CausalLowerbound/UniformLowerBound/Minimax.lean)
+和 [`paper_partA_minimax`](../formalization/CausalLowerbound/PartA.lean)。
+均匀协变量结论在 `α,β,γ>0`、`(α+β)(2+d/γ)<d` 下给出
+`C n^(-ρ_U)` 的点态绝对误差 minimax 下界，其中
+`ρ_U=1/(1+d/(2γ)+d/(2(α+β)))`。
+常数 `C>0` 独立于 `n`，结论对所有 `n≥1` 成立，无 ε 损失。
+Part A 由 `0<α,β≤1` 时的指数恒等式，以及均匀设计到原 rough-design 模型的包含关系推出。
+
+主定理内部完成光滑模型构造、合法性、独立符号矩消去、实际二元似然识别、
+固定分量信息界、大分量坏事件概率界、全局 TV 比较、尺度选择及 minimax 风险归约。
+风险使用真实 iid 样本律，对全部可测估计量取下确界，包括无限风险情形。
+最终参数没有保留这些步骤作为附加假设。
+证明使用固定分量截断阶数和小尺度常数，未声称完成附件各中间引理对任意尺度的完整统一界。
+
+`UniformModel` 在已有 `StatisticalModel` 中固定设计密度上下界均为 1，并证明密度恒等于 1。
+代码要求全空间的 Hölder 与概率范围控制，是附件立方体模型的一个子模型；
+子模型下界蕴含附件模型下界。主定理允许 `Lπ,L₀>1/2`、`Lτ>0`、`0<κ<1/2`，
+取三个半径均为 1 即覆盖附件的单位 Hölder 球。
+Part A 保留原参数范围 `0<κ<1/4`、`lower<1<upper`。
+
+新增 `UniformLowerBound/` 的 16 个模块及 `PartA.lean` 共 2,194 行，
+包含 114 条显式定理、37 个 `def`、2 个 `abbrev` 和 1 个命题型实例。
+全部 39 个非命题定义均已加入 `Audit.lean` 显式列表；统一导入入口包含全部新模块。
+锁定工具链下，在 `formalization/` 依次执行：
+
+```powershell
+& '.\.tools\lean-4.19.0-windows\bin\lake.exe' build
+& '.\.tools\lean-4.19.0-windows\bin\lake.exe' env lean Audit.lean
+```
+
+两个命令退出码均为 0：
+
+```text
+Build completed successfully.
+Axiom audit passed for 6395 theorem/definition roots. Only propext, Classical.choice, and Quot.sound are allowed.
+```
+
+本地完整日志为 `formalization/.tools/uniform-complete-full-build.log` 和
+`formalization/.tools/uniform-complete-full-audit.log`。
+构建有未使用变量等 linter 提示，无证明错误；最终 uniform 与 Part A 模块编译无警告。
+全库源码扫描未发现 `sorry`、`admit`、`native_decide` 或自定义公理。
+`git diff --check` 通过。独立源码审查核对了真实混合概率律、模型包含方向、
+固定截断阶数的量词顺序和全部正样本量的尺度校准，未发现未证关键假设。
+
+附件原样保存为 [`UniformCovariate_LowerBound.pdf`](../UniformCovariate_LowerBound.pdf)，
+SHA-256 为 `7CEEF8823BF1C4A607A37B1F03208F72DBB371B88B996D6E0508E789A4A339D1`。
 
 ## 2026-10-11：统一上界主速率定理完成
 

@@ -2,8 +2,14 @@
 
 Lean 4 formalization of minimax lower bounds for pointwise CATE estimation with binary outcomes and rough design.
 
-本项目收录论文原稿及其 Lean 4 形式化。目前 **Part B 和 Part C 已完成，Part A 尚未完成**。
-完整论文覆盖三种情形，因此不能将当前状态表述为整篇主定理已经全部形式化。
+本项目收录论文原稿及其 Lean 4 形式化。**Part A、Part B 和 Part C 的最终下界均已完成**：
+Part A 保持精确指数，Part B/C 为原文任意正 $\varepsilon$ 的结论。
+
+新增附件的**均匀协变量主下界**已完成（2026-10-11）：
+[`paper_uniform_minimax_explicit`](formalization/CausalLowerbound/UniformLowerBound/Minimax.lean)
+对全部正光滑度及严格低光滑度区间，证明所有 $n\ge1$ 的精确速率下界，无 $\varepsilon$ 损失。
+原 Part A 由均匀设计子模型包含关系直接推出，入口为
+[`paper_partA_minimax`](formalization/CausalLowerbound/PartA.lean)。
 
 另附的两尺度上界 `rho_ts_upper_bound.pdf` 的统一主速率定理已完成（2026-10-11）：
 [`paper_upper_bound`](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean)
@@ -91,7 +97,7 @@ $$
 
 | 情形 | 正则性范围 | 状态 | 最终入口 |
 | --- | --- | --- | --- |
-| Part A | `0 < α, β ≤ 1` | 尚未形式化 | — |
+| Part A | `0 < α, β ≤ 1` | 已完成，无 ε 损失 | [`paper_partA_minimax`](formalization/CausalLowerbound/PartA.lean) |
 | Part B | `α > 1, β > 1` | 已完成 | [`paper_partB_minimax`](formalization/CausalLowerbound/PartB/PaperMinimax.lean) |
 | Part C | `0 < α ≤ 1 < β` 或 `0 < β ≤ 1 < α` | 两个分支均已完成 | [`paper_partC_minimax`](formalization/CausalLowerbound/PartC/Minimax.lean) |
 
@@ -122,7 +128,26 @@ $$
 
 $C_\varepsilon,N_\varepsilon$ 可以依赖固定模型参数、$x_0$ 和 $\varepsilon$，但不依赖 $n$。
 Part B 中 $s=1$；Part C 中 $s=(1+\min(\alpha,\beta))/2$，两个分支均包含粗糙指数等于 1 的边界。
-当前完成范围是 B/C 的任意正 $\varepsilon$ 结论；论文 Part A 的 $\varepsilon=0$ 下界尚未形式化。
+Part A 在相同低光滑度条件下证明 $R_n^*\ge C n^{-\rho}$，对所有 $n\ge1$ 成立。
+
+### 均匀协变量的精确主下界
+
+[新附件](UniformCovariate_LowerBound.pdf) 固定 $X\sim\operatorname{Unif}([0,1]^d)$。
+对任意 $\alpha,\beta,\gamma>0$，若
+$(\alpha+\beta)(2+d/\gamma)<d$，令
+
+$$
+\rho_U=\frac{1}{1+d/(2\gamma)+d/[2(\alpha+\beta)]}.
+$$
+
+最终定理证明：存在与 $n$ 无关的 $C>0$，使所有 $n\ge1$ 都有
+$R_n^*(x_0;\mathcal P_{\mathrm{uniform}})\ge C n^{-\rho_U}$。
+允许 $L_\pi,L_0>1/2$、$L_\tau>0$、$0<\kappa<1/2$；取三个半径均为 1 即得到附件中的单位 Hölder 球结论。
+当 $0<\alpha,\beta\le1$ 时，$\rho_U=\rho$，且均匀设计属于原 rough-design 模型类，故直接得到 Part A。
+
+证明使用固定大小的依赖图分量截断、坏事件概率界和实际混合实验的 Hellinger 界。
+所有模型合法性、符号矩消去、尺度选择和风险归约均在 Lean 内证明；
+没有把这些结论作为主定理假设，也没有要求复现附件中间引理对任意尺度的完整统一界。
 
 ## 这些数学对象如何在 Lean 中表示
 
@@ -192,7 +217,7 @@ Part C 的统一入口是 `CausalLowerbound.PartC.paper_partC_minimax`，它调�
 [`paper_partC_roughPropensity_minimax`](formalization/CausalLowerbound/PartC/PropensityMinimax.lean)
 和 [`paper_partC_roughOutcome_minimax`](formalization/CausalLowerbound/PartC/OutcomeMinimax.lean)。
 
-最终定理只接收正则性指数、分支条件、上述参数区间和 $\varepsilon>0$。
+Part B/C 最终定理只接收正则性指数、分支条件、上述参数区间和 $\varepsilon>0$。
 证明内部完成以下步骤：
 
 1. 选择尺度和振幅，构造满足全部模型约束的两组参数族，并证明在 $x_0$ 处的目标分离。
@@ -207,6 +232,7 @@ Part C 对部分 taper（截断）和 ghost（辅助积分点）估计作了调�
 ## 从哪里开始
 
 - [论文 PDF](LowerBound_Complete_Revised.pdf) / [TeX 源码](LowerBound_Complete_Revised.tex)
+- [均匀协变量下界附件](UniformCovariate_LowerBound.pdf) / [主定理](formalization/CausalLowerbound/UniformLowerBound/Minimax.lean) / [Part A 推论](formalization/CausalLowerbound/PartA.lean)
 - [安装、构建与公理审计](docs/REPRODUCING.md)
 - [验证记录与代码规模](docs/VERIFICATION.md)
 - [完整模块说明及论文对应](formalization/README.md)
@@ -235,7 +261,7 @@ cd formalization
 `c44e0c8ee63ca166450922a373c7409c5d26b00b`。
 依赖版本保存在 `lean-toolchain`、`lakefile.toml` 和 `lake-manifest.json` 中。
 
-2026-10-04 的本地整库构建及公理审计通过，检查了 **5,334 个定理／构造入口**。
+最近一次本地整库构建及公理审计的命令、结果和入口数量见[验证记录](docs/VERIFICATION.md)。
 允许的公理仅为 `propext`、`Classical.choice`、`Quot.sound`。
 GitHub Actions 工作流已配置为构建同一工程并执行同一份 `Audit.lean`；远端运行结果以 GitHub Actions 页面为准。
 
@@ -246,8 +272,9 @@ GitHub Actions 工作流已配置为构建同一工程并执行同一份 `Audit.
 ├── README.md
 ├── LowerBound_Complete_Revised.tex
 ├── LowerBound_Complete_Revised.pdf
+├── UniformCovariate_LowerBound.pdf
 ├── formalization/
-│   ├── CausalLowerbound/          # 公共模块、PartB、PartC
+│   ├── CausalLowerbound/          # 公共模块、PartA/B/C、UniformLowerBound、UpperBound
 │   ├── CausalLowerbound.lean      # 统一导入入口
 │   ├── Audit.lean                # 传递公理依赖审计
 │   ├── Build.ps1                 # Windows 构建入口
@@ -261,7 +288,7 @@ GitHub Actions 工作流已配置为构建同一工程并执行同一份 `Audit.
 ```
 
 `.lake/`、`.tools/`、`tmp/`、`dist/`、调试日志及编译产物不进入版本控制。
-历史调试日志归档在本地 `tmp/build-logs/`，最近的整库审计日志保留在 `formalization/verification-partC.log`。
+历史调试日志归档在本地 `tmp/build-logs/`，各阶段整库验证日志的位置见[验证记录](docs/VERIFICATION.md)。
 本地打包命令：
 
 ```powershell

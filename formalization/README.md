@@ -1,6 +1,61 @@
-# Part B、Part C 与两尺度上界的 Lean 形式化
+# 均匀协变量下界、Part A/B/C 与两尺度上界的 Lean 形式化
 
 [项目首页](../README.md) · [复现说明](../docs/REPRODUCING.md) · [验证记录](../docs/VERIFICATION.md)
+
+## 均匀协变量主下界与 Part A
+
+[`UniformLowerBound/Minimax.lean`](CausalLowerbound/UniformLowerBound/Minimax.lean) 完成
+[均匀协变量附件](../UniformCovariate_LowerBound.pdf) 的最终主下界。
+`paper_uniform_minimax_explicit` 的完整参数与结论为：
+
+```text
+D = Fintype.card d > 0，α, β, γ > 0，(α+β)(2+D/γ) < D，
+Lπ > 1/2，L₀ > 1/2，Lτ > 0，0 < κ < 1/2
+  ⇒ ∃ C > 0，∀ n ≥ 1，
+     C n^(-1/(1+D/(2γ)+D/(2(α+β)))) ≤ uniformMinimaxRisk(..., x₀, n)。
+```
+
+这里设计严格等于单位立方体上的均匀分布。
+`UniformModel` 是已有 `StatisticalModel` 在 `lower=upper=1` 时的特例；
+`uniformModel_design` 证明其密度恒等于 1。
+风险使用真实 iid 样本律、非负扩展实数积分，以及全部可测估计量的下确界。
+模型对整个空间施加 Hölder 与概率范围约束，限制到立方体后属于附件模型类，
+因此这个更小子模型上的下界蕴含附件的结论。
+取 `Lπ=L₀=Lτ=1` 即得到单位 Hölder 球版本。
+Lean 定理允许任意 `x₀`，取原文的内部点即可应用。
+
+令 `A=α+β`、`q=γ/A`、`p=2/(D+qD+2γ)`。
+证明选择 `h=t n^(-p)`、`ℓ=h^q`、`a=cℓ^α`、`b=cℓ^β`，
+并构造共享独立符号先验的两组合法二元响应模型。
+二次分割给出精确一阶矩消去及目标分离 `4ab`。
+根据 `α≤β` 选择构造，分量信息代价中的额外四次项被 `a²b²` 控制。
+
+固定分量截断阶数 `Q` 后，坏事件概率由
+`C_Q n^(Q+1) h^D ℓ^(QD)` 控制；
+好事件的全局信息代价由碰撞数期望及分量 Hellinger 界控制，量级为
+`C_Q n² h^D ℓ^(D+2A)`。
+严格低光滑度条件保证可先选固定 `Q`，再取固定小 `t`，
+令全部 `n≥1` 的实际混合 TV 距离不超过 `1/2`。
+最终信号为 `ab=c²t^γ n^(-ρ_U)`，故没有 ε 损失。
+这条证明完成最终主定理，不声称逐行复现 Walsh 推导，
+也不声称证明附件 Lemma 2 对任意尺度的完整统一界。
+
+| 模块 | 内容 |
+| --- | --- |
+| `Profiles`、`Models`、`Legality` | 光滑符号场、两种构造及全部模型约束 |
+| `Moments`、`LikelihoodBridge` | 真实符号先验矩与二元似然恒等式 |
+| `CenteredProducts`、`LocalComparison`、`ActualLocal` | 共同一阶矩消去、固定分量信息界及真实核桥接 |
+| `ClusterBounds`、`GraphBounds`、`GlobalHellinger`、`ActualComparison` | 大分量事件、碰撞数、条件独立分解及整体 TV 界 |
+| `Rates`、`ScaleChoice` | 精确指数、固定截断阶数和全样本量尺度校准 |
+| `Risk`、`Minimax` | 真实先验混合、全部可测估计量风险及最终主定理 |
+
+[`PartA.lean`](CausalLowerbound/PartA.lean) 的 `paper_partA_minimax` 直接调用上述主定理。
+`rateExponent_eq_uniform` 证明 `0<α,β≤1` 时原论文指数等于 `ρ_U`；
+`uniformMinimaxRisk_le` 通过设计密度恒等于 1 的模型包含关系，将下界转移到原 rough-design 风险。
+Part A 保留原 `0<κ<1/4`、`lower<1<upper` 等参数条件，
+对全部 `n≥1` 成立，且无 ε 损失。最终定理不含模型合法性、矩消去、信息界或尺度存在等附加假设。
+
+## 两尺度上界
 
 两尺度上界的统一主速率定理已完成并通过整库构建与公理审计（2026-10-11）。
 最终入口是 [`CausalLowerbound.UpperBound.paper_upper_bound`](CausalLowerbound/UpperBound/PaperUpperBound.lean)，
@@ -26,7 +81,7 @@
 这是上界结论，不声称证明严格低光滑度区间的匹配 minimax 下界。
 
 当前上界目录包含 76 个模块、515 条显式定理和 130 个 `def`／`abbrev` 声明。
-整库构建和 6,194 个定理／构造入口的公理审计均通过；
+上界完成检查点的整库构建和 6,194 个定理／构造入口的公理审计均通过；
 详见[验证记录](../docs/VERIFICATION.md)。
 
 Part B 状态：第 1、2、3 项均已完成；实际实验的全局 TV 趋零、先验混合识别和最终 minimax 下界已通过 Lean 检查（2026-10-03）。
@@ -82,7 +137,7 @@ Lπ > 1/2，L₀ > 1/2，Lτ > 0，0 < κ < 1/4，lower < 1 < upper
 全空间正则的子模型。该子模型上的下界蕴含论文模型上的下界，因为扩大模型类
 只会增大 minimax 风险。全空间版本同时对概率范围和设计上下界施加更强要求。
 设计仅要求可测、积分为 1 及上下界；没有对设计密度增加光滑性条件。
-Part A 尚未完成。Part C 的粗糙倾向与粗糙结局情形均已完成，详见下文。
+Part A 已由均匀设计主下界直接推出，见本文开头；Part C 的两个分支详见下文。
 
 ## Part C 的最终定理与证明链
 

@@ -13,6 +13,7 @@ $rootFiles = @(
     '.gitattributes',
     'LowerBound_Complete_Revised.tex',
     'LowerBound_Complete_Revised.pdf',
+    'UniformCovariate_LowerBound.pdf',
     'formalization/.gitignore',
     'formalization/README.md',
     'formalization/CausalLowerbound.lean',

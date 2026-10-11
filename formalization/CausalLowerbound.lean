@@ -608,3 +608,5 @@ import CausalLowerbound.PartC.OutcomePaperMinimax
 import CausalLowerbound.PartC.OutcomeMinimax
 import CausalLowerbound.PartC.Minimax
 import CausalLowerbound.UpperBound
+import CausalLowerbound.UniformLowerBound
+import CausalLowerbound.PartA
