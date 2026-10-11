@@ -1,25 +1,31 @@
 # Causal Lower Bound — Lean 4 Formalization
 
-Lean 4 formalization of minimax lower bounds for pointwise CATE estimation with binary outcomes and rough design.
+Lean 4 formalization of upper and lower bounds for pointwise CATE estimation.
 
-本项目收录论文原稿及其 Lean 4 形式化。**Part A、Part B 和 Part C 的最终下界均已完成**：
-Part A 保持精确指数，Part B/C 为原文任意正 $\varepsilon$ 的结论。
+本项目形式化条件平均处理效应（CATE）的点态估计速率，包含均匀协变量主下界、
+rough-design 模型的 Part A/B/C 下界，以及两尺度估计量的统一上界。
 
-新增附件的**均匀协变量主下界**已完成（2026-10-11）：
-[`paper_uniform_minimax_explicit`](formalization/CausalLowerbound/UniformLowerBound/Minimax.lean)
-对全部正光滑度及严格低光滑度区间，证明所有 $n\ge1$ 的精确速率下界，无 $\varepsilon$ 损失。
-原 Part A 由均匀设计子模型包含关系直接推出，入口为
-[`paper_partA_minimax`](formalization/CausalLowerbound/PartA.lean)。
+**截至 2026-10-11，上述最终定理均已完成。** 均匀协变量下界和由其直接推出的 Part A
+保持精确指数，对所有 $n\ge1$ 成立；Part B/C 为任意正 $\varepsilon$ 的结论。
+上界覆盖实值响应、闭立方体边界及低／高光滑度两种速率。
+下界均采用下文列明的严格低光滑度条件和模型参数范围。
 
-另附的两尺度上界 `rho_ts_upper_bound.pdf` 的统一主速率定理已完成（2026-10-11）：
-[`paper_upper_bound`](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean)
-覆盖实值响应、闭立方体边界及低／高光滑度两种速率。
-这部分使用完整的实值响应模型，区别于下述二元响应下界子模型。
-整库构建和公理审计已通过，见[验证记录](docs/VERIFICATION.md)。
+| 已验证结果 | 模型与范围 | 结论 | Lean 入口 |
+| --- | --- | --- | --- |
+| 均匀协变量主下界 | 固定均匀设计；任意正光滑度满足严格低光滑度条件 | 精确指数，无 $\varepsilon$ 损失 | [`paper_uniform_minimax_explicit`](formalization/CausalLowerbound/UniformLowerBound/Minimax.lean) |
+| Part A | rough design；$0<\alpha,\beta\le1$ | 由均匀主下界直接推出，无 $\varepsilon$ 损失 | [`paper_partA_minimax`](formalization/CausalLowerbound/PartA.lean) |
+| Part B | rough design；$\alpha,\beta>1$ | 任意 $\varepsilon>0$ 的下界 | [`paper_partB_minimax`](formalization/CausalLowerbound/PartB/PaperMinimax.lean) |
+| Part C | rough design；一侧指数在 $(0,1]$，另一侧大于 1 | 两个分支均完成，任意 $\varepsilon>0$ | [`paper_partC_minimax`](formalization/CausalLowerbound/PartC/Minimax.lean) |
+| 两尺度上界 | 可测设计密度有固定正下界和有限上界；实值响应；全部正光滑度 | 同一估计量在模型和目标点上统一的风险上界 | [`paper_upper_bound`](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean) |
+
+本地整库构建通过，**6,395 个定理／构造入口通过传递公理审计**。
+源码无 `sorry`、`admit`、`native_decide` 或自定义公理；
+允许的基础公理仅为 `propext`、`Classical.choice`、`Quot.sound`。
+详见[验证记录](docs/VERIFICATION.md)与[完整模块说明](formalization/README.md)。
 
 ## 问题的数学表述
 
-### 观测模型与估计目标
+### 下界的观测模型与估计目标
 
 观测独立同分布的样本 $Z_1,\ldots,Z_n$，其中 $Z=(X,A,Y)$ 满足
 
@@ -47,7 +53,7 @@ $$
 | $\mu_0(x)$ | 未接受处理时的结局条件均值 | $\beta$ 阶 Hölder 光滑度，半径 $L_0$ |
 | $\tau(x)$ | 处理组与对照组的条件均值差 | $\gamma$ 阶 Hölder 光滑度，半径 $L_\tau$ |
 
-### 模型类
+### 下界使用的模型类
 
 固定 $\alpha,\beta,\gamma>0$、$L_\pi,L_0>1/2$、$L_\tau>0$，以及
 
@@ -93,63 +99,100 @@ $$
 下界描述的是：任意估计方法在这个模型类上的最坏情形误差，都受到下述速率的限制。
 这里的损失是固定点 $x_0$ 处的绝对误差；期望取自该模型真实的 $n$ 个独立样本。
 
-## 已形式化的下界与完成范围
+## 最终下界与 Part A 推论
 
-| 情形 | 正则性范围 | 状态 | 最终入口 |
-| --- | --- | --- | --- |
-| Part A | `0 < α, β ≤ 1` | 已完成，无 ε 损失 | [`paper_partA_minimax`](formalization/CausalLowerbound/PartA.lean) |
-| Part B | `α > 1, β > 1` | 已完成 | [`paper_partB_minimax`](formalization/CausalLowerbound/PartB/PaperMinimax.lean) |
-| Part C | `0 < α ≤ 1 < β` 或 `0 < β ≤ 1 < α` | 两个分支均已完成 | [`paper_partC_minimax`](formalization/CausalLowerbound/PartC/Minimax.lean) |
-
-令
-
-$$
-s=\frac{\min(\alpha,1)+\min(\beta,1)}2,\qquad
-\rho=\frac{\alpha+\beta+2s}{d+4s+2ds/\gamma}.
-$$
-
-再假设参数满足
+以下所有下界均假设 $\alpha,\beta,\gamma>0$，并处于严格低光滑度区间：
 
 $$
 (\alpha+\beta)\left(2+\frac d\gamma\right)<d.
 $$
 
-在这些固定参数条件下，Part B 和 Part C 的最终结论为
+### 均匀协变量主下界：精确指数
+
+[均匀协变量论文](UniformCovariate_LowerBound.pdf) 固定
+$X\sim\operatorname{Unif}([0,1]^d)$。令
+
+$$
+\rho_U=\frac{1}{1+d/(2\gamma)+d/[2(\alpha+\beta)]}.
+$$
+
+最终定理证明
+
+$$
+\exists C>0,\quad\forall n\ge1,\qquad
+R_n^*(x_0;\mathcal P_{\mathrm{uniform}})\ge Cn^{-\rho_U}.
+$$
+
+常数 $C$ 可依赖固定模型参数及 $x_0$，但不依赖 $n$。
+此定理允许 $L_\pi,L_0>1/2$、$L_\tau>0$、$0<\kappa<1/2$；
+取三个半径均为 1 即得到论文中的单位 Hölder 球结论。
+
+证明采用固定大小的依赖图分量截断、大分量坏事件概率界和实际混合实验的 Hellinger 界。
+模型合法性、符号矩消去、尺度选择和风险归约均在 Lean 内完成。
+形式化范围是最终主下界；证明对中间构造作了调整，具体对应见[技术说明](formalization/README.md)。
+
+### Part A：均匀设计子模型直接给出下界
+
+原 rough-design 论文的指数为
+
+$$
+s_1=\frac{\min(\alpha,1)+\min(\beta,1)}2,\qquad
+\rho=\frac{\alpha+\beta+2s_1}{d+4s_1+2ds_1/\gamma}.
+$$
+
+当 $0<\alpha,\beta\le1$ 时，$s_1=(\alpha+\beta)/2$，从而 $\rho=\rho_U$。
+固定相同的 Hölder 半径和重叠参数，均匀密度 $f\equiv1$ 满足原模型的密度界，所以
+
+$$
+\mathcal P_{\mathrm{uniform}}\subseteq\mathcal P,
+\qquad
+R_n^*(x_0;\mathcal P)\ge
+R_n^*(x_0;\mathcal P_{\mathrm{uniform}})\ge Cn^{-\rho}.
+$$
+
+[`PartA.lean`](formalization/CausalLowerbound/PartA.lean) 已形式化指数恒等式和模型包含的风险比较。
+因此 Part A 对全部 $n\ge1$ 成立，保持精确指数，无 $\varepsilon$ 损失。
+
+### Part B 与 Part C：任意正 ε
+
+在各自的正则性分支和上述低光滑度条件下，最终结论为
 
 $$
 \begin{gathered}
 \forall\varepsilon>0,\quad
 \exists C_\varepsilon>0,\quad
 \exists N_\varepsilon\in\mathbb N,\\
-\forall n\ge N_\varepsilon,\quad
+\forall n\ge N_\varepsilon,\qquad
 R_n^*(x_0;\mathcal P)\ge C_\varepsilon n^{-(\rho+\varepsilon)}.
 \end{gathered}
 $$
 
-$C_\varepsilon,N_\varepsilon$ 可以依赖固定模型参数、$x_0$ 和 $\varepsilon$，但不依赖 $n$。
-Part B 中 $s=1$；Part C 中 $s=(1+\min(\alpha,\beta))/2$，两个分支均包含粗糙指数等于 1 的边界。
-Part A 在相同低光滑度条件下证明 $R_n^*\ge C n^{-\rho}$，对所有 $n\ge1$ 成立。
+$C_\varepsilon,N_\varepsilon$ 可依赖固定模型参数、$x_0$ 和 $\varepsilon$，但不依赖 $n$。
+Part B 中 $s_1=1$；Part C 中 $s_1=(1+\min(\alpha,\beta))/2$，
+两个分支均包含粗糙指数等于 1 的边界。
 
-### 均匀协变量的精确主下界
+## 两尺度估计量的统一上界
 
-[新附件](UniformCovariate_LowerBound.pdf) 固定 $X\sim\operatorname{Unif}([0,1]^d)$。
-对任意 $\alpha,\beta,\gamma>0$，若
-$(\alpha+\beta)(2+d/\gamma)<d$，令
+[`paper_upper_bound`](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean)
+在有固定正下界和有限上界的可测设计密度下，为原始 $n$ 个 iid 样本构造可测估计量。
+响应允许为实数，假设条件二阶矩有界、满足重叠条件，
+并在预先固定且包含单位立方体的开邻域上满足 Hölder 条件。
+
+对全部充分大的 $n$，同一估计量的平均绝对误差在全部合法模型及闭立方体目标点上统一满足
 
 $$
-\rho_U=\frac{1}{1+d/(2\gamma)+d/[2(\alpha+\beta)]}.
+\mathbb E_P\bigl[|\widehat\tau_n(x_0)-\tau_P(x_0)|\bigr]
+\le
+\begin{cases}
+Cn^{-\rho}, & (\alpha+\beta)(2+d/\gamma)<d,\\
+Cn^{-\gamma/(2\gamma+d)}, & (\alpha+\beta)(2+d/\gamma)\ge d.
+\end{cases}
 $$
 
-最终定理证明：存在与 $n$ 无关的 $C>0$，使所有 $n\ge1$ 都有
-$R_n^*(x_0;\mathcal P_{\mathrm{uniform}})\ge C n^{-\rho_U}$。
-允许 $L_\pi,L_0>1/2$、$L_\tau>0$、$0<\kappa<1/2$；取三个半径均为 1 即得到附件中的单位 Hölder 球结论。
-当 $0<\alpha,\beta\le1$ 时，$\rho_U=\rho$，且均匀设计属于原 rough-design 模型类，故直接得到 Part A。
+这里 $\rho$ 与上文的 rough-design 指数相同，估计量、常数和样本量阈值均先于模型和目标点选定。
+上界的实值响应模型与下界的二元响应子模型分别定义；完整参数和量词见对应 Lean 声明。
 
-证明使用固定大小的依赖图分量截断、坏事件概率界和实际混合实验的 Hellinger 界。
-所有模型合法性、符号矩消去、尺度选择和风险归约均在 Lean 内证明；
-没有把这些结论作为主定理假设，也没有要求复现附件中间引理对任意尺度的完整统一界。
-
-## 这些数学对象如何在 Lean 中表示
+## 下界模型在 Lean 中的表示
 
 Lean 直接验证的模型类由 `StatisticalModel` 定义。它把函数、设计密度和所有合法性证明
 放在同一个结构中；最终风险对该结构的全部实例取上确界。
@@ -190,7 +233,7 @@ def minimaxRisk (α β γ : Regularity) (Lπ L₀ Lτ κ lower upper : ℝ) (hκ
 样本类型将 $X^n$ 与 $(A,Y)^n$ 分别存放，`Bool` 编码二元变量。
 `cubeMeasure` 是限制在单位立方体上的 Lebesgue 测度；乘上密度后构造真实样本分布。
 风险使用扩展非负实数 `ℝ≥0∞` 和非负积分 `lintegral`，所以也允许估计量的风险为无穷大。
-最终结论中的 `∀ᶠ n : ℕ in atTop` 表示“对所有充分大的样本量 $n$”，
+Part B/C 结论中的 `∀ᶠ n : ℕ in atTop` 表示“对所有充分大的样本量 $n$”，
 `ENNReal.ofReal` 将非负实数下界嵌入同一风险值域。
 
 ### Lean 模型与论文模型的关系
@@ -207,10 +250,13 @@ R_n^*(x_0;\mathcal P)\ge R_n^*(x_0;\mathcal P_{\mathrm{Lean}}).
 $$
 
 因此，Lean 直接证明的 `minimaxRisk` 下界蕴含论文模型上的同一速率下界。
-最终 Lean 定理允许任意 `x₀ : d → ℝ`，对密度界只要求 `lower < 1 < upper`；
+最终下界定理允许任意 `x₀ : d → ℝ`；rough-design 下界对密度界只要求 `lower < 1 < upper`。
 取论文中的内部点和正密度下界即可应用。完整的定义与定理声明以上述链接中的源码为准。
 
 ### 最终入口与证明链
+
+均匀协变量主下界的入口是 `CausalLowerbound.UniformLowerBound.paper_uniform_minimax_explicit`。
+`CausalLowerbound.PartA.paper_partA_minimax` 调用该定理，通过指数恒等式和模型包含关系得到原 Part A。
 
 Part B 的入口是 `CausalLowerbound.PartB.ShellGeometry.paper_partB_minimax`。
 Part C 的统一入口是 `CausalLowerbound.PartC.paper_partC_minimax`，它调用
@@ -236,6 +282,7 @@ Part C 对部分 taper（截断）和 ghost（辅助积分点）估计作了调�
 - [安装、构建与公理审计](docs/REPRODUCING.md)
 - [验证记录与代码规模](docs/VERIFICATION.md)
 - [完整模块说明及论文对应](formalization/README.md)
+- [两尺度统一上界](formalization/CausalLowerbound/UpperBound/PaperUpperBound.lean)
 - [Part C：粗糙倾向分支](formalization/CausalLowerbound/PartC/PropensityMinimax.lean)
 - [Part C：粗糙结局分支](formalization/CausalLowerbound/PartC/OutcomeMinimax.lean)
 
